@@ -24,7 +24,10 @@
     target: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/></svg>',
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2L12 4l9 7.2V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg>',
     coins: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3" fill="currentColor"/><path d="M5 9.5c0 1.7 3.1 3 7 3s7-1.3 7-3V12c0 1.7-3.1 3-7 3s-7-1.3-7-3zm0 5c0 1.7 3.1 3 7 3s7-1.3 7-3V17c0 1.7-3.1 3-7 3s-7-1.3-7-3z" fill="currentColor"/></svg>',
-    users: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.6" fill="currentColor"/><path d="M2.5 20c.6-3.8 3.2-6 6.5-6s5.9 2.2 6.5 6z" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor"/><path d="M15.8 13.4c3 .2 5.2 2.3 5.7 5.6h-4.3c-.3-2-1-3.9-1.4-5.6z" fill="currentColor"/></svg>'
+    users: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.6" fill="currentColor"/><path d="M2.5 20c.6-3.8 3.2-6 6.5-6s5.9 2.2 6.5 6z" fill="currentColor"/><circle cx="17" cy="9" r="2.8" fill="currentColor"/><path d="M15.8 13.4c3 .2 5.2 2.3 5.7 5.6h-4.3c-.3-2-1-3.9-1.4-5.6z" fill="currentColor"/></svg>',
+    wrench: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    headset: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    person: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.6" r="4" fill="currentColor"/><path d="M4 21c.7-4.3 3.9-7 8-7s7.3 2.7 8 7z" fill="currentColor"/></svg>'
   };
 
   const STATUS = {
@@ -53,6 +56,26 @@
     popDen: { label: 'Zaludnienie (osób na km²)', legend: 'Osób na km² (NSP 2021)', fmt: (v) => fmtInt(v) },
     income: { label: 'Dochód na osobę (Polska = 100)', legend: 'Dochód rozporządzalny na osobę, Polska = 100', fmt: (v) => fmtDec(v, 1) }
   };
+
+  // tryb „Model biznesowy” (dokładka, tryb potencjału działa bez zmian)
+  const BIZ_DEFAULTS = {
+    year: 2026, perDay: 2, days: 21, price: 1900, vat: 8,
+    close: 10, cpl: 3, leadsPerRep: 250,
+    techCost: 11500, techBonus: 100, jobCost: 150,
+    repCost: 9650, repBonus: 100, fee: 450
+  };
+  const BIZ_METRICS = {
+    bTech: { label: 'Ekipy techników (etaty)', legend: 'Ekipy techników (etaty)', fmt: (v) => fmtDec(v, 1), short: (v) => fmtDec(v, 1), icon: 'wrench' },
+    bProfit: { label: 'Zysk firmy miesięcznie', legend: 'Zysk firmy, zł miesięcznie', fmt: (v) => fmtMoney(v), short: (v) => shortMoney(v), icon: 'coins', signed: true },
+    bRev: { label: 'Przychód netto miesięcznie', legend: 'Przychód netto, zł miesięcznie', fmt: (v) => fmtMoney(v), short: (v) => shortMoney(v), icon: 'coins' },
+    bJobs: { label: 'Zlecenia miesięcznie', legend: 'Zlecenia miesięcznie', fmt: (v) => fmtDec(v, v < 10 ? 1 : 0), short: (v) => fmtDec(v, v < 10 ? 1 : 0), icon: 'home' },
+    bLeads: { label: 'Leady potrzebne miesięcznie', legend: 'Leady potrzebne miesięcznie', fmt: (v) => fmtInt(v), short: (v) => fmtCompact(v), icon: 'target' },
+    bReps: { label: 'Opiekunowie klienta (etaty)', legend: 'Opiekunowie klienta (etaty)', fmt: (v) => fmtDec(v, 1), short: (v) => fmtDec(v, 1), icon: 'headset' },
+    bAds: { label: 'Budżet reklam miesięcznie', legend: 'Budżet reklam, zł miesięcznie', fmt: (v) => fmtMoney(v), short: (v) => shortMoney(v), icon: 'target' },
+    bFee: { label: 'Twoja prowizja miesięcznie', legend: 'Twoja prowizja, zł miesięcznie', fmt: (v) => fmtMoney(v), short: (v) => shortMoney(v), icon: 'coins' },
+    bSat: { label: 'Jaką część realnego rynku bierzesz', legend: 'Część realnego rynku, którą bierzesz', fmt: (v) => fmtDec(v * 100, 0) + '%', short: (v) => fmtDec(v * 100, 0) + '%', icon: 'target' }
+  };
+  const PLAN_KEYS = ['active', 'next', 'test'];
 
   // ---------------------------------------------------------------- formatowanie
   const nf0 = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 });
@@ -141,12 +164,17 @@
       pow: { '3010': { s: 'active', n: '' }, '3062': { s: 'active', n: '' } }
     },
     bases: [{ id: 'b1', name: 'Konin', lat: 52.223, lng: 18.2511, r: 100 }],
-    show: { marks: true, bases: true, cities: true }
+    show: { marks: true, bases: true, cities: true },
+    mode: 'pot',
+    bizMetric: 'bTech',
+    B: Object.assign({}, BIZ_DEFAULTS),
+    ovr: { woj: {}, pow: {} },
+    crews: { woj: {}, pow: {} }
   });
   let state = DEFAULT_STATE();
 
   function persistable() {
-    return { v: 1, level: state.level, metric: state.metric, A: state.A, marks: state.marks, bases: state.bases, show: state.show };
+    return { v: 1, level: state.level, metric: state.metric, A: state.A, marks: state.marks, bases: state.bases, show: state.show, mode: state.mode, bizMetric: state.bizMetric, B: state.B, ovr: state.ovr, crews: state.crews };
   }
   function applyLoaded(o) {
     if (!o || typeof o !== 'object') return;
@@ -161,6 +189,11 @@
       id: String(b.id || 'b' + (i + 1)).slice(0, 20), name: String(b.name || 'Baza').slice(0, 40), lat: +b.lat, lng: +b.lng, r: Math.min(250, Math.max(10, +b.r || 80))
     }));
     if (o.show) state.show = Object.assign({ marks: true, bases: true, cities: true }, o.show);
+    if (o.mode === 'pot' || o.mode === 'biz') state.mode = o.mode;
+    if (o.bizMetric && BIZ_METRICS[o.bizMetric]) state.bizMetric = o.bizMetric;
+    if (o.B && typeof o.B === 'object') for (const k in BIZ_DEFAULTS) if (typeof o.B[k] === 'number' && isFinite(o.B[k])) state.B[k] = o.B[k];
+    if (o.ovr && typeof o.ovr === 'object') state.ovr = sanitizeOvr(o.ovr);
+    if (o.crews && typeof o.crews === 'object') state.crews = sanitizeCrews(o.crews);
   }
   function sanitizeMarks(m) {
     const out = { woj: {}, pow: {} };
@@ -227,8 +260,8 @@
     return A.s2025 / 100;
   }
 
-  function baseCalc(u, A) {
-    const cutoff = NOW - A.minAge;
+  function baseCalc(u, A, now) {
+    const cutoff = (now || NOW) - A.minAge;
     let poolNew = 0, pipe = 0, built = 0;
     const ufh = new Array(u.houses.length);
     for (let i = 0; i < u.houses.length; i++) {
@@ -347,24 +380,27 @@
     TOTAL.houses = DATA.woj[0].houses.map((_, i) => DATA.woj.reduce((s, u) => s + u.houses[i], 0));
     TOTAL.cutoff = NOW - A.minAge;
     TOTAL.covered = sumStats([...unionFrac].map(([pid, f]) => [R.pow.get(pid), f]));
+    computeBiz();
   }
 
   function metricValue(lvl, id, metric) {
     const r = R[lvl].get(id);
-    return r ? r[metric || state.metric] : 0;
+    if (!r) return 0;
+    return metric ? r[metric] : curVal(r);
   }
 
   function rankOf(lvl, id, metric) {
     const v = metricValue(lvl, id, metric);
+    const get = metric ? (r) => r[metric] : curVal;
     let k = 1;
-    for (const [oid, r] of R[lvl]) if (oid !== id && r[metric] > v) k++;
+    for (const [oid, r] of R[lvl]) if (oid !== id && get(r) > v) k++;
     return k;
   }
 
   // ---------------------------------------------------------------- klasy choropletu
   let BREAKS = { br: [], min: 0, max: 0 };
   function computeBreaks() {
-    const vals = [...R[state.level].values()].map((r) => r[state.metric]).filter((v) => isFinite(v)).sort((a, b) => a - b);
+    const vals = [...R[state.level].values()].map(curVal).filter((v) => isFinite(v)).sort((a, b) => a - b);
     const n = vals.length;
     const br = [];
     for (let k = 1; k < 6; k++) br.push(vals[Math.min(n - 1, Math.floor(k * n / 6))]);
@@ -402,13 +438,13 @@
     [layers.marks, layers.sel, layers.bases, layers.cities].forEach((l) => l.addTo(map));
 
     map.on('click', (e) => { if (addingBase) addBase(e.latlng); });
-    map.on('zoomend', rafThrottle(() => { drawCities(); drawMarks(); }));
+    map.on('zoomend', rafThrottle(() => { drawMarks(); drawCities(); }));
     map.on('moveend', rafThrottle(drawCities));
   }
 
   function fillStyle(lvl, id) {
     const v = metricValue(lvl, id);
-    return { fillColor: RAMP[classOf(v)], fillOpacity: 1, color: '#ffffff', weight: lvl === 'woj' ? 1.6 : 0.7, opacity: 1 };
+    return { fillColor: state.mode === 'biz' && v < 0 ? NEG_FILL : RAMP[classOf(v)], fillOpacity: 1, color: '#ffffff', weight: lvl === 'woj' ? 1.6 : 0.7, opacity: 1 };
   }
 
   function bindRegion(lvl, f, layer) {
@@ -438,15 +474,16 @@
   }
 
   function tooltipEl(lvl, id) {
-    const m = METRICS[state.metric];
+    const m = curMetric();
     const r = R[lvl].get(id);
     const total = R[lvl].size;
     const mk = state.marks[lvl][id];
     const box = h('div', null,
-      h('div', { class: 'tt-v' }, m.fmt(r[state.metric])),
+      h('div', { class: 'tt-v' }, m.fmt(curVal(r))),
       h('div', { class: 'tt-n' }, unitTitle(lvl, id)),
-      h('div', { class: 'tt-s' }, m.legend + ' · miejsce ' + rankOf(lvl, id, state.metric) + ' z ' + total)
+      h('div', { class: 'tt-s' }, m.legend + ' · miejsce ' + rankOf(lvl, id) + ' z ' + total)
     );
+    if (state.mode === 'biz' && r.b) box.append(h('div', { class: 'tt-s' }, bizLine(r.b)));
     if (mk && mk.s) {
       const st = STATUS[mk.s];
       box.append(h('div', { class: 'tt-st' }, h('span', { class: 'st-dot', style: 'background:' + st.color, icon: st.icon }), st.label));
@@ -484,9 +521,11 @@
 
   function drawMarks() {
     layers.marks.clearLayers();
-    if (!state.show.marks) return;
+    pillAnchors = [];
+    const biz = state.mode === 'biz';
+    if (!state.show.marks && !biz) return;
     const lvl = state.level;
-    const ids = Object.keys(state.marks[lvl]).filter((id) => state.marks[lvl][id].s && FEAT[lvl].has(id));
+    const ids = state.show.marks ? Object.keys(state.marks[lvl]).filter((id) => state.marks[lvl][id].s && FEAT[lvl].has(id)) : [];
     const z = map.getZoom();
     const showLabel = lvl === 'woj' || z >= 7.5 || ids.length <= 12;
     const placed = [];
@@ -504,6 +543,7 @@
       const st = STATUS[state.marks[lvl][id].s];
       const f = FEAT[lvl].get(id).feature;
       outlineLayers(f, st.color, lvl === 'woj' ? 4 : 3, st.dash, 'marks').forEach((l) => layers.marks.addLayer(l));
+      if (biz) continue;
       const u = lvl === 'woj' ? WOJ_BY_ID.get(id) : POW_BY_ID.get(id);
       const at = lvl === 'woj' ? [u.c[0] + 0.42, u.c[1]] : u.c;
       const pt = map.latLngToContainerPoint(at);
@@ -521,6 +561,7 @@
       const badge = h('div', { class: 'status-badge' + (label ? '' : ' small'), style: 'background:' + st.color + ';transform:translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))', icon: st.icon, title: st.label + ': ' + unitTitle(lvl, id) }, label ? st.label : '');
       layers.marks.addLayer(L.marker(at, { pane: 'labels', interactive: false, keyboard: false, icon: L.divIcon({ className: '', html: badge, iconSize: [0, 0] }) }));
     }
+    if (biz) drawBizPills(lvl, placed, hit);
   }
 
   function drawSelection() {
@@ -544,6 +585,7 @@
         placed.push({ x1: pt.x - Math.max(24, w / 2), x2: pt.x + Math.max(24, w / 2), y1: pt.y - 22, y2: pt.y + 48 });
       }
     }
+    if (state.mode === 'biz') for (const a of pillAnchors) { const q = map.latLngToContainerPoint(a.ll); placed.push({ x1: q.x + a.dx - a.w / 2, x2: q.x + a.dx + a.w / 2, y1: q.y + a.dy - 13, y2: q.y + a.dy + 13 }); }
     const baseNames = new Set(state.bases.map((b) => b.name.toLowerCase()));
     const cands = DATA.pow.filter((p) => p.city && p.pop >= minPop).sort((a, b) => b.pop - a.pop);
     for (const p of cands) {
@@ -581,9 +623,9 @@
   function renderLegend() {
     const lg = $('legend');
     lg.textContent = '';
-    const m = METRICS[state.metric];
+    const m = curMetric();
     lg.classList.toggle('collapsed', legendCollapsed);
-    lg.append(h('div', { class: 'legend-head' }, h('h4', null, m.legend), h('button', { type: 'button', class: 'legend-toggle', 'aria-expanded': String(!legendCollapsed), onclick: () => { legendCollapsed = !legendCollapsed; renderLegend(); } }, legendCollapsed ? 'Pokaż' : 'Ukryj')));
+    lg.append(h('div', { class: 'legend-head' }, h('h4', null, legendTitle(m)), h('button', { type: 'button', class: 'legend-toggle', 'aria-expanded': String(!legendCollapsed), onclick: () => { legendCollapsed = !legendCollapsed; renderLegend(); } }, legendCollapsed ? 'Pokaż' : 'Ukryj')));
     if (legendCollapsed) return;
     const rows = null;
     const edges = [BREAKS.min].concat(BREAKS.br, [BREAKS.max]);
@@ -593,15 +635,17 @@
     const labels = h('div', { class: 'ramp-labels' });
     for (let k = 0; k < 6; k++) labels.append(h('span', { title: m.fmt(edges[k]) + ' – ' + m.fmt(edges[k + 1]) }, shortFmt(edges[k])));
     lg.append(labels);
-    lg.append(h('div', { class: 'legend-note' }, 'Każdy kolor to szósta część ' + (state.level === 'woj' ? 'województw' : 'powiatów') + ', od najniższych wartości (dolna granica pod kolorem). Najwyżej: ' + m.fmt(BREAKS.max) + (state.metric === 'income' && state.level === 'pow' ? '. Powiaty mają wartość swojego województwa.' : '.')));
+    lg.append(h('div', { class: 'legend-note' }, 'Każdy kolor to szósta część ' + (state.level === 'woj' ? 'województw' : 'powiatów') + ', od najniższych wartości (dolna granica pod kolorem). Najwyżej: ' + m.fmt(BREAKS.max) + (state.mode !== 'biz' && state.metric === 'income' && state.level === 'pow' ? '. Powiaty mają wartość swojego województwa.' : '.') + (state.mode === 'biz' ? ' Plakietki pokazują wartość ' + (state.level === 'woj' ? 'województwa.' : 'oznaczonych powiatów.') : '')));
     const keys = h('div', { class: 'keys' });
     const usedStatuses = STATUS_KEYS.filter((k) => Object.values(state.marks[state.level]).some((x) => x.s === k));
     if (state.show.marks) usedStatuses.forEach((k) => keys.append(h('span', { class: 'key' }, lineKey(STATUS[k].color, STATUS[k].dash), STATUS[k].label)));
     if (state.show.bases && state.bases.length) keys.append(h('span', { class: 'key' }, lineKey('#0a0a0a', '5 4'), 'Zasięg bazy'));
+    if (state.mode === 'biz' && BREAKS.min < 0) keys.append(h('span', { class: 'key' }, h('i', { class: 'neg-sw' }), 'Strata'));
     if (keys.childNodes.length) lg.append(keys);
     void rows;
   }
   function shortFmt(v) {
+    if (state.mode === 'biz') return curMetric().short(v);
     if (state.metric === 'revenue') {
       const a = Math.abs(v);
       if (a >= 1e6) return nf1.format(v / 1e6) + ' mln';
@@ -625,6 +669,7 @@
     state.selected = { lvl, id };
     if (lvl !== state.level) { state.level = lvl; applyLevel(); save(); }
     drawSelection();
+    if (state.mode === 'biz' && lvl === 'pow') redrawOverlays();
     openTab('region');
     if (zoom && FEAT[lvl].has(id)) {
       map.flyToBounds(FEAT[lvl].get(id).layer.getBounds(), { padding: [60, 60], maxZoom: lvl === 'woj' ? 7.25 : 9, duration: 0.6 });
@@ -635,11 +680,12 @@
   function openTab(name) {
     state.tab = name;
     document.querySelectorAll('.tabs [role=tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
-    ['region', 'ranking', 'bazy', 'zalozenia'].forEach((t) => { $('tab-' + t).hidden = t !== name; });
+    ['region', 'plan', 'ranking', 'bazy', 'zalozenia'].forEach((t) => { $('tab-' + t).hidden = t !== name; });
     renderPanel();
   }
   function renderPanel() {
     if (state.tab === 'region') renderRegion();
+    else if (state.tab === 'plan') renderPlan();
     else if (state.tab === 'ranking') renderRanking();
     else if (state.tab === 'bazy') renderBases();
     else if (state.tab === 'zalozenia') renderAssumptions();
@@ -656,18 +702,18 @@
     const box = $('tab-region');
     box.textContent = '';
     const s = state.selected;
-    if (!s) { renderPoland(box); return; }
+    if (!s) { if (state.mode === 'biz') renderBizPoland(box); else renderPoland(box); return; }
     const lvl = s.lvl, id = s.id;
     const u = lvl === 'woj' ? WOJ_BY_ID.get(id) : POW_BY_ID.get(id);
     const r = R[lvl].get(id);
     const total = R[lvl].size;
-    const rank = rankOf(lvl, id, state.metric);
+    const rank = rankOf(lvl, id);
     const head = h('div', { class: 'region-head' },
       h('div', null,
         h('div', { class: 'eyebrow' }, lvl === 'woj' ? 'Województwo' : (u.city ? 'Miasto na prawach powiatu' : 'Powiat')),
         h('h2', null, lvl === 'woj' ? u.name : u.name.replace(/^pow\.\s*/, 'powiat ').replace(/^m\.\s*/, ''))
       ),
-      h('div', { class: 'rank-chip', title: METRICS[state.metric].label }, '#' + rank + ' z ' + total)
+      h('div', { class: 'rank-chip', title: curMetric().label }, '#' + rank + ' z ' + total)
     );
     box.append(head);
     if (lvl === 'pow') {
@@ -675,6 +721,7 @@
       box.append(h('div', { class: 'region-sub' }, 'woj. ', h('a', { href: '#', onclick: (e) => { e.preventDefault(); select('woj', w.id, true); } }, w.name)));
     }
     box.append(statusEditor(lvl, id));
+    if (state.mode === 'biz') { renderBizRegion(box, lvl, id); return; }
 
     const grid = h('div', { class: 'stat-grid' });
     grid.append(statPair(fmtMoney(r.revenue), 'rynek realny rocznie: ' + fmtInt(r.market) + ' ' + plural(r.market, 'zlecenie', 'zlecenia', 'zleceń'), 'hl'));
@@ -754,7 +801,7 @@
           const m = state.marks[lvl][id] || { s: null, n: '' };
           m.s = key;
           if (!m.s && !m.n) delete state.marks[lvl][id]; else state.marks[lvl][id] = m;
-          save(); drawMarks(); renderLegend(); renderRegion();
+          save(); if (state.mode === 'biz') { redrawOverlays(); renderKPIs(); } else drawMarks(); renderLegend(); renderRegion();
         }
       }, h('span', { class: 'dot', style: color ? 'background:' + color : '', icon }), label);
     };
@@ -848,7 +895,7 @@
     const box = $('tab-ranking');
     box.textContent = '';
     const lvl = state.level;
-    const m = METRICS[state.metric];
+    const m = curMetric();
     box.append(h('p', { class: 'hint' }, 'Ranking ', h('b', null, lvl === 'woj' ? 'województw' : 'powiatów'), ' według: ', h('b', null, m.label), '. Kliknij, żeby pokazać na mapie. Kolejność zmienisz polem „Kolor mapy”.'));
     if (lvl === 'pow') {
       const inp = h('input', { type: 'search', placeholder: 'Szukaj powiatu albo miasta…', 'aria-label': 'Szukaj powiatu', value: rankQuery });
@@ -860,7 +907,7 @@
     box.append(meta, list);
     function fillList() {
       list.textContent = '';
-      const rows = [...R[lvl].entries()].map(([id, r]) => [id, r[state.metric]]).sort((a, b) => b[1] - a[1]);
+      const rows = [...R[lvl].entries()].map(([id, r]) => [id, curVal(r)]).sort((a, b) => b[1] - a[1]);
       const max = rows.length ? rows[0][1] : 1;
       const q = rankQuery.trim().toLowerCase();
       let shown = 0;
@@ -926,6 +973,7 @@
         h('div', null, h('div', { class: 'v' }, fmtTech(T.techs)), h('div', { class: 'l' }, 'techników'))
       )
     ));
+    if (state.mode === 'biz') box.append(baseBizBlock(unionFrac, 'Wszystkie bazy razem · model biznesowy · ' + state.B.year + ' r.'));
     state.bases.forEach((b) => {
       const fm = baseFrac.get(b.id) || new Map();
       const st = sumStats([...fm].map(([pid, f]) => [R.pow.get(pid), f]));
@@ -951,7 +999,8 @@
           h('div', null, h('b', null, fmtInt(st.ours)), h('span', null, calibRate != null ? 'Twoich zleceń (tempo z kalibracji)' : 'Twoich zleceń (' + state.A.share + '% rynku)')),
           h('div', null, h('b', null, fmtTech(st.techs)), h('span', null, 'techników · ' + fmtMoney(st.oursRevenue) + ' rocznie'))
         ),
-        top.length ? h('div', { class: 'base-top' }, 'Najwięcej potencjału w zasięgu: ' + top.join(', ')) : null
+        top.length ? h('div', { class: 'base-top' }, 'Najwięcej potencjału w zasięgu: ' + top.join(', ')) : null,
+        state.mode === 'biz' ? baseBizBlock(fm) : null
       ));
     });
     const citySel = h('select', { class: 'select-plain', 'aria-label': 'Dodaj bazę w mieście' });
@@ -1090,10 +1139,637 @@
     curveBox.append(s);
   }
 
+  // ---------------------------------------------------------------- model biznesowy (tryb „Model biznesowy”)
+  // Dokładka do mapy potencjału: te same dane, przeliczone na ekipy, opiekunów, leady i pieniądze.
+  // Tryb potencjału działa bez zmian; wszystko poniżej włącza się tylko przy state.mode === 'biz'.
+  const NEG_FILL = '#f2b8b3';
+  const HERO_BIZ = {
+    badge: 'Model biznesowy',
+    title: 'Ilu ludzi potrzeba i ile z tego zostaje?',
+    sub: 'Te same dane co na mapie potencjału, przeliczone na ekipy techników, opiekunów klienta, leady i pieniądze. Plan to regiony oznaczone jako Działamy, Następny i Testujemy. Zmieniaj liczbę czyszczeń dziennie, ceny i koszty, a liczby przeliczą się od razu.'
+  };
+  const HERO_POT = {};
+  let BT = null;
+  let pillAnchors = [];
+  let planA = null, planB = null;
+
+  function curMetric() { return state.mode === 'biz' ? BIZ_METRICS[state.bizMetric] : METRICS[state.metric]; }
+  function curVal(r) {
+    if (!r) return 0;
+    if (state.mode === 'biz') return r.b ? r.b[state.bizMetric] : 0;
+    return r[state.metric];
+  }
+  function legendTitle(m) { return state.mode === 'biz' ? m.legend + ' · ' + state.B.year + ' r.' : m.legend; }
+  function shortMoney(v) {
+    const a = Math.abs(v || 0);
+    if (a >= 1e6) return nf1.format(v / 1e6) + ' mln';
+    if (a >= 1e3) return nf0.format(v / 1e3) + ' tys.';
+    return nf0.format(Math.round(v || 0));
+  }
+  function signedTxt(s, v) { return v > 0.5 ? '+' + s : s; }
+  function jobsTxt(v) {
+    if (v >= 10) return fmtInt(v) + ' ' + plural(v, 'zlecenie', 'zlecenia', 'zleceń');
+    return fmtDec(v, 1) + ' zlecenia';
+  }
+  function fteTxt(v) { return fmtDec(v, 1) + ' etatu'; }
+  function jobsGen(v) { // dopełniacz: „z 33 zleceń”
+    if (v >= 10) return fmtInt(v) + ' ' + (Math.round(v) === 1 ? 'zlecenia' : 'zleceń');
+    return fmtDec(v, 1) + ' zlecenia';
+  }
+
+  function sanitizeOvr(o) {
+    const out = { woj: {}, pow: {} };
+    ['woj', 'pow'].forEach((lvl) => {
+      const src = (o && o[lvl]) || {};
+      for (const id in src) {
+        const x = src[id] || {}, y = {};
+        if (typeof x.price === 'number' && x.price >= 300 && x.price <= 20000) y.price = x.price;
+        if (x.perDay === 1 || x.perDay === 2) y.perDay = x.perDay;
+        if (typeof x.share === 'number' && x.share >= 0 && x.share <= 100) y.share = x.share;
+        if (Object.keys(y).length) out[lvl][String(id).slice(0, 8)] = y;
+      }
+    });
+    return out;
+  }
+
+  function sanitizeCrews(o) {
+    const out = { woj: {}, pow: {} };
+    ['woj', 'pow'].forEach((lvl) => {
+      const src = (o && o[lvl]) || {};
+      for (const id in src) { const v = Math.round(+src[id]); if (v >= 1 && v <= 60) out[lvl][String(id).slice(0, 8)] = v; }
+    });
+    return out;
+  }
+
+  // parametry regionu: własne ustawienie → ustawienie województwa (dla powiatu) → plan
+  function inheritedParams(lvl, id) {
+    const B = state.B;
+    const p = { price: B.price, perDay: B.perDay, share: null, from: 'plan' };
+    if (lvl === 'pow') {
+      const wo = state.ovr.woj[POW_BY_ID.get(id).woj];
+      if (wo) {
+        if (wo.price != null) { p.price = wo.price; p.from = 'woj'; }
+        if (wo.perDay != null) { p.perDay = wo.perDay; p.from = 'woj'; }
+        if (wo.share != null) { p.share = wo.share; p.from = 'woj'; }
+      }
+    }
+    return p;
+  }
+  function effParams(lvl, id) {
+    const p = inheritedParams(lvl, id);
+    const o = state.ovr[lvl] && state.ovr[lvl][id];
+    if (o) {
+      if (o.price != null) p.price = o.price;
+      if (o.perDay != null) p.perDay = o.perDay;
+      if (o.share != null) p.share = o.share;
+    }
+    return p;
+  }
+
+  // jedna komórka modelu: z liczby zleceń miesięcznie robimy zespół i rachunek
+  function bizFromJobs(jobs, market, p) {
+    const B = state.B;
+    const cap = Math.max(0.1, p.perDay * B.days);
+    const close = Math.max(0.1, B.close) / 100;
+    const b = { jobs, market, price: p.price, perDay: p.perDay, p };
+    b.tech = jobs / cap;
+    b.leads = jobs / close;
+    b.reps = b.leads / Math.max(1, B.leadsPerRep);
+    b.rev = jobs * p.price / (1 + B.vat / 100);
+    b.ads = b.leads * B.cpl;
+    b.repC = b.reps * B.repCost + jobs * B.repBonus;
+    b.techC = b.tech * B.techCost + jobs * B.techBonus;
+    b.varC = jobs * B.jobCost;
+    b.feeC = jobs * B.fee;
+    b.cost = b.ads + b.repC + b.techC + b.varC + b.feeC;
+    b.profit = b.rev - b.cost;
+    b.margin = b.rev > 0 ? b.profit / b.rev : 0;
+    b.shareEff = market > 0 ? jobs / market : 0;
+    b.bTech = b.tech; b.bProfit = b.profit; b.bRev = b.rev; b.bJobs = jobs; b.bLeads = b.leads; b.bReps = b.reps; b.bAds = b.ads; b.bFee = b.feeC;
+    return b;
+  }
+
+  function computeBiz() {
+    if (!DATA) return;
+    const A = state.A, Y = state.B.year;
+    ['woj', 'pow'].forEach((lvl) => {
+      for (const u of DATA[lvl]) {
+        const r = R[lvl].get(u.id);
+        let theo = r.theo, pool = r.pool;
+        if (Y !== NOW) { const bc = baseCalc(u, A, Y); theo = bc.theo; pool = bc.pool; }
+        const marketY = theo * A.adopt / 100;
+        const p = effParams(lvl, u.id);
+        const oursY = p.share != null ? marketY * p.share / 100 : (calibRate != null ? theo * calibRate : marketY * A.share / 100);
+        r.bPool = pool;
+        r.bTheo = theo / 12;
+        r.b = bizFromJobs(oursY / 12, marketY / 12, p);
+        r.bDem = r.b;
+        const n = state.crews[lvl] && state.crews[lvl][u.id];
+        if (n > 0) { r.b = bizFromJobs(n * p.perDay * state.B.days, marketY / 12, p); r.b.crews = n; }
+        r.b.sat = r.b.market > 0 ? r.b.jobs / r.b.market : 0;
+        r.b.satTheo = r.bTheo > 0 ? r.b.jobs / r.bTheo : 0;
+        r.b.bSat = r.b.sat;
+      }
+    });
+    BT = teamSummary(polandItems());
+  }
+
+  function sumBiz(entries) {
+    const t = { jobs: 0, market: 0, tech: 0, leads: 0, reps: 0, rev: 0, ads: 0, repC: 0, techC: 0, varC: 0, feeC: 0, cost: 0, profit: 0 };
+    for (const [b, f] of entries) for (const k in t) t[k] += (b[k] || 0) * f;
+    t.margin = t.rev > 0 ? t.profit / t.rev : 0;
+    return t;
+  }
+  function peopleFor(x) { return x <= 0.05 ? 0 : Math.max(1, Math.ceil(x - 0.1)); }
+  // pełne etaty: ekipy zaokrąglamy w górę w każdym województwie, opiekunów łącznie (dzwonią do wszystkich regionów)
+  function teamSummary(items) {
+    const t = sumBiz(items.map((x) => [x.b, 1]));
+    const byWoj = new Map();
+    items.forEach((x) => byWoj.set(x.woj, (byWoj.get(x.woj) || 0) + x.b.tech));
+    let tp = 0;
+    for (const v of byWoj.values()) tp += peopleFor(v);
+    const rp = peopleFor(t.reps);
+    t.tp = tp; t.rp = rp;
+    t.fullProfit = t.profit - (tp - t.tech) * state.B.techCost - (rp - t.reps) * state.B.repCost;
+    return t;
+  }
+  function planItems(lvl, keys) {
+    const ks = keys || PLAN_KEYS;
+    return Object.keys(state.marks[lvl]).filter((id) => ks.includes(state.marks[lvl][id].s) && R[lvl].has(id) && R[lvl].get(id).b)
+      .map((id) => ({ id, lvl, s: state.marks[lvl][id].s, b: R[lvl].get(id).b, woj: lvl === 'woj' ? id : POW_BY_ID.get(id).woj }));
+  }
+  function polandItems() { return DATA.woj.map((u) => ({ id: u.id, lvl: 'woj', b: R.woj.get(u.id).b, woj: u.id })); }
+
+  // jedno czyszczenie przy ustawieniach planu
+  function unitEcon(perDay) {
+    const B = state.B;
+    const pd = perDay || B.perDay;
+    const close = Math.max(0.1, B.close) / 100;
+    const net = B.price / (1 + B.vat / 100);
+    const ads = B.cpl / close;
+    const rep = B.repCost / (Math.max(1, B.leadsPerRep) * close) + B.repBonus;
+    const tech = B.techCost / Math.max(0.1, pd * B.days) + B.techBonus;
+    const profit = net - ads - rep - tech - B.jobCost - B.fee;
+    const beforeCrew = net - ads - rep - B.techBonus - B.jobCost - B.fee;
+    return { gross: B.price, vat: B.price - net, net, ads, rep, tech, mat: B.jobCost, fee: B.fee, profit, margin: net > 0 ? profit / net : 0, breakEven: beforeCrew > 0 ? B.techCost / beforeCrew : Infinity };
+  }
+
+  // ---------- elementy widoku
+  function unitIcons(fte, max) {
+    const wrap = h('div', { class: 'units', 'aria-hidden': 'true' });
+    const n = Math.ceil(fte - 1e-9);
+    const show = Math.min(n, max || 14);
+    for (let i = 0; i < show; i++) {
+      const f = Math.max(0, Math.min(1, fte - i));
+      wrap.append(h('span', { class: 'unit', style: '--f:' + (f * 100).toFixed(0) + '%', icon: 'person' }));
+    }
+    if (n > show) wrap.append(h('span', { class: 'unit-more' }, '+' + (n - show)));
+    return wrap;
+  }
+  function teamRow(icon, v, l, fte) {
+    return h('div', { class: 'team-row' }, h('span', { class: 'ti', icon }), h('div', { class: 'tx' }, h('div', { class: 'tv' }, v), h('div', { class: 'tl' }, l)), fte > 0 ? unitIcons(fte) : null);
+  }
+  function flowRow(b) {
+    const st = (v, l, cls) => h('div', { class: 'st' + (cls ? ' ' + cls : '') }, h('b', null, v), h('span', null, l));
+    return h('div', { class: 'flow' },
+      st(fmtInt(b.leads), plural(b.leads, 'lead', 'leady', 'leadów') + ' / mies. · reklamy ' + fmtMoney(b.ads)),
+      st(fmtDec(b.jobs, b.jobs < 10 ? 1 : 0), 'zleceń / mies. (' + fmtDec(state.B.close, 0) + '% leadów)'),
+      st(fmtMoney(b.rev), 'przychodu netto / mies.'),
+      st(fmtMoney(b.profit), 'zysku firmy / mies.', b.profit < 0 ? 'neg' : 'ok')
+    );
+  }
+  function waterfall(start, costs, endLabel, endNote) {
+    let run = start.value, lo = 0;
+    const hi = Math.max(start.value, 1);
+    const segs = costs.map((c) => { const from = run; run -= c.value; lo = Math.min(lo, run); return Object.assign({ a: run, b: from }, c); });
+    const end = run;
+    const span = (hi - lo) || 1;
+    const pos = (x) => (x - lo) / span * 100;
+    const box = h('div', { class: 'wf', role: 'table', 'aria-label': 'Rachunek: ' + start.label + ' minus koszty' });
+    const row = (cls, label, a, b, text, note) => box.append(h('div', { class: 'wf-row ' + cls, role: 'row' },
+      h('div', { class: 'wf-l', role: 'cell' }, label, note ? h('span', { class: 'wf-note' }, note) : null),
+      h('div', { class: 'wf-bar', role: 'presentation' }, h('i', { style: 'left:' + pos(Math.min(a, b)).toFixed(2) + '%;width:' + Math.max(0.8, Math.abs(pos(b) - pos(a))).toFixed(2) + '%' })),
+      h('div', { class: 'wf-v', role: 'cell' }, text)
+    ));
+    row('start', start.label, 0, start.value, fmtMoney(start.value), start.note);
+    segs.forEach((s) => row('cost', s.label, s.a, s.b, '−' + fmtMoney(s.value), s.note));
+    row(end >= 0 ? 'end' : 'end neg', endLabel, 0, end, fmtMoney(end), endNote);
+    return { el: box, end };
+  }
+  function pnlWaterfall(b) {
+    const B = state.B;
+    return waterfall({ label: 'Przychód netto', value: b.rev, note: 'cena bez VAT ' + B.vat + '%' }, [
+      { label: 'Reklamy', value: b.ads, note: 'leady × ' + fmtDec(B.cpl, 2) + ' zł' },
+      { label: 'Opiekunowie klienta', value: b.repC, note: 'etaty i premie od zleceń' },
+      { label: 'Ekipy techników', value: b.techC, note: 'etaty i premie od czyszczeń' },
+      { label: 'Chemia, inhibitor, dojazd', value: b.varC },
+      { label: 'Twoja prowizja', value: b.feeC, note: fmtInt(B.fee) + ' zł od zlecenia' }
+    ], 'Zysk firmy', b.rev > 0 ? 'marża ' + fmtDec(b.profit / b.rev * 100, 0) + '%' : null);
+  }
+
+  // ---------- mapa: plakietki z wartością
+  function drawBizPills(lvl, placed, hit) {
+    pillAnchors = [];
+    const m = curMetric();
+    let ids;
+    if (lvl === 'woj') ids = DATA.woj.map((u) => u.id);
+    else ids = Object.keys(state.marks.pow).filter((id) => state.marks.pow[id].s && R.pow.has(id));
+    if (lvl === 'pow' && state.selected && state.selected.lvl === 'pow' && R.pow.has(state.selected.id) && !ids.includes(state.selected.id)) ids.push(state.selected.id);
+    const order = ids.map((id) => [id, Math.abs(curVal(R[lvl].get(id)) || 0)]).sort((a, b) => b[1] - a[1]).map((x) => x[0]);
+    for (const id of order) {
+      const r = R[lvl].get(id);
+      const v = curVal(r);
+      const u = lvl === 'woj' ? WOJ_BY_ID.get(id) : POW_BY_ID.get(id);
+      const pt = map.latLngToContainerPoint(u.c);
+      const txt = m.signed ? signedTxt(m.short(v), v) : m.short(v);
+      const w = txt.length * 8 + 36;
+      let ok = false, dx = 0, dy = 0;
+      for (const [ox, oy] of [[0, 0], [0, 26], [0, -26], [0, 52], [0, -52]]) {
+        const box = { x1: pt.x + ox - w / 2, x2: pt.x + ox + w / 2, y1: pt.y + oy - 13, y2: pt.y + oy + 13 };
+        if (!hit(box)) { placed.push(box); dx = ox; dy = oy; ok = true; break; }
+      }
+      if (!ok) continue;
+      pillAnchors.push({ ll: u.c, dx, dy, w });
+      const mk = state.marks[lvl][id];
+      const st = mk && mk.s && state.show.marks ? STATUS[mk.s] : null;
+      const pill = h('div', {
+        class: 'val-pill' + (st ? ' st' : '') + (v < 0 ? ' neg' : ''),
+        style: (st ? '--stc:' + st.color + ';' : '') + 'transform:translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))',
+        title: unitTitle(lvl, id) + ': ' + m.fmt(v)
+      }, h('span', { class: 'pi', icon: m.icon }), txt);
+      layers.marks.addLayer(L.marker(u.c, { pane: 'labels', interactive: false, keyboard: false, icon: L.divIcon({ className: '', html: pill, iconSize: [0, 0] }) }));
+    }
+  }
+  function redrawOverlays() { drawMarks(); drawCities(); }
+  function bizLine(b) {
+    return fteTxt(b.tech) + ' ekip · ' + fmtInt(b.leads) + ' ' + plural(b.leads, 'lead', 'leady', 'leadów') + ' · zysk ' + fmtMoney(b.profit) + ' / mies.';
+  }
+
+  // ---------- panel: region
+  function satBar(b) {
+    const pct = b.sat * 100;
+    const cls = pct <= 60 ? 'ok' : pct <= 100 ? 'warn' : 'bad';
+    const txt = pct <= 60 ? 'bezpiecznie' : pct <= 100 ? 'ambitnie' : 'ponad cały realny rynek';
+    return h('div', { class: 'sat ' + cls },
+      h('div', { class: 'sat-bar' }, h('i', { style: 'width:' + Math.max(1, Math.min(100, pct)).toFixed(1) + '%' })),
+      h('div', { class: 'sat-t' }, h('b', null, fmtDec(pct, 0) + '% realnego rynku'), ' · ' + txt + '. ' + jobsTxt(b.jobs) + ' z ok. ' + fmtDec(b.market, 0) + ' miesięcznie (' + fmtDec(b.satTheo * 100, 0) + '% rynku teoretycznego).'));
+  }
+  function crewsEditor(lvl, id, r) {
+    const n = (state.crews[lvl] && state.crews[lvl][id]) || 0;
+    const base = Math.max(1, Math.ceil(r.bDem.tech - 0.1));
+    const setN = (v) => { if (v > 0) state.crews[lvl][id] = Math.min(60, v); else delete state.crews[lvl][id]; onBizChange(); };
+    const box = h('div', { class: 'crews' },
+      h('div', { class: 'crews-top' },
+        h('div', null,
+          h('div', { class: 'crews-l' }, 'Ekipy w tym regionie'),
+          h('div', { class: 'crews-s' }, n ? 'ustawione przez Ciebie, każda robi ' + r.b.perDay + ' ' + plural(r.b.perDay, 'czyszczenie', 'czyszczenia', 'czyszczeń') + ' dziennie' : 'automatycznie z popytu: ' + fteTxt(r.bDem.tech) + '. Kliknij +, żeby rozstawić własne ekipy.')),
+        h('div', { class: 'stepper', role: 'group', 'aria-label': 'Liczba ekip w regionie' },
+          h('button', { type: 'button', 'aria-label': 'Mniej ekip', onclick: () => setN(n ? n - 1 : base - 1) }, '−'),
+          h('b', null, n ? String(n) : 'auto'),
+          h('button', { type: 'button', 'aria-label': 'Więcej ekip', onclick: () => setN(n ? n + 1 : base) }, '+'))),
+      satBar(r.b));
+    if (n) box.append(h('button', { type: 'button', class: 'link-btn', onclick: () => setN(0) }, 'Wróć do liczenia z popytu'));
+    return box;
+  }
+  function renderBizRegion(box, lvl, id) {
+    const r = R[lvl].get(id), b = r.b, B = state.B, p = b.p;
+    const fs = teamSummary([{ b, woj: 'x' }]);
+    box.append(h('div', { class: 'section-title' }, 'Zespół i pieniądze w ' + B.year + ' r.'));
+    box.append(crewsEditor(lvl, id, r));
+    box.append(h('div', { class: 'team' },
+      teamRow('wrench', (b.crews ? b.crews + ' ' + plural(b.crews, 'ekipa', 'ekipy', 'ekip') : fteTxt(b.tech) + ' ekip') + ' techników', 'przy ' + p.perDay + ' ' + plural(p.perDay, 'czyszczeniu', 'czyszczeniach', 'czyszczeniach') + ' dziennie i ' + B.days + ' dniach pracy w miesiącu · ' + jobsTxt(b.jobs) + ' / mies.', b.tech),
+      teamRow('headset', fteTxt(b.reps) + ' opiekunów klienta', fmtInt(b.leads) + ' ' + plural(b.leads, 'lead', 'leady', 'leadów') + ' miesięcznie przy skuteczności ' + fmtDec(B.close, 0) + '% i ' + fmtInt(B.leadsPerRep) + ' leadach na osobę', b.reps)
+    ));
+    box.append(flowRow(b));
+    box.append(h('div', { class: 'section-title' }, 'Rachunek miesięczny regionu'));
+    box.append(pnlWaterfall(b).el);
+    box.append(h('p', { class: 'hint wf-foot' },
+      'Gdyby ten region miał własny zespół na pełnych etatach (' + fs.tp + ' ' + plural(fs.tp, 'ekipa', 'ekipy', 'ekip') + ', ' + fs.rp + ' ' + plural(fs.rp, 'opiekun', 'opiekunów', 'opiekunów') + '): ',
+      h('b', { class: fs.fullProfit < 0 ? 'neg' : null }, fmtMoney(fs.fullProfit) + ' zysku miesięcznie'), '. Rocznie: przychód netto ' + fmtMoney(b.rev * 12) + ', Twoja prowizja ' + fmtMoney(b.feeC * 12) + '.'));
+    box.append(h('div', { class: 'section-title' }, 'Ustawienia dla tego regionu'));
+    box.append(overrideEditor(lvl, id));
+    box.append(h('div', { class: 'section-title' }, 'Rynek w regionie (' + B.year + ' r.)'));
+    const t = h('table', { class: 'kv' });
+    const row = (k, v, src) => t.append(h('tr', null, h('td', null, k, src ? h('span', { class: 'src' }, src) : null), h('td', null, v)));
+    row('Twoje zlecenia miesięcznie', fmtDec(b.jobs, 1), p.share != null ? 'udział ustawiony dla regionu: ' + fmtInt(p.share) + '%' : (calibRate != null ? 'tempo z kalibracji (zakładka Założenia)' : state.A.share + '% realnego rynku'));
+    row('Realny rynek miesięcznie', fmtDec(b.market, 1) + ' ' + plural(b.market, 'zlecenie', 'zlecenia', 'zleceń'), state.A.adopt + '% właścicieli w cyklu ' + state.A.cycle + ' lat');
+    row('Rynek teoretyczny miesięcznie', fmtInt(r.bTheo), 'gdyby każdy dom był czyszczony co ' + state.A.cycle + ' lat');
+    row('Domy z podłogówką do czyszczenia', fmtInt(r.bPool), 'instalacje z domów zbudowanych do ' + (B.year - state.A.minAge) + ' r.');
+    box.append(t);
+    if (B.year > NOW) {
+      const now = r.pool, grow = now > 0 ? (r.bPool / now - 1) * 100 : 0;
+      box.append(h('p', { class: 'hint', style: 'margin-top:8px' }, 'Prognoza: w ' + B.year + ' r. do czyszczenia będzie ' + fmtDec(grow, 0) + '% więcej domów niż dziś, bo dochodzą podłogówki z lat ' + (NOW - state.A.minAge + 1) + '–' + (B.year - state.A.minAge) + '.'));
+    }
+    if (lvl === 'woj') {
+      const top = DATA.pow.filter((pp) => pp.woj === id).map((pp) => [pp, R.pow.get(pp.id).b]).sort((a, c) => c[1].profit - a[1].profit).slice(0, 6);
+      box.append(h('div', { class: 'section-title' }, 'Powiaty z największym zyskiem'));
+      const ul = h('ul', { class: 'list-clean mini-list' });
+      top.forEach(([pp, bb]) => ul.append(h('li', null, h('button', { type: 'button', onclick: () => select('pow', pp.id, true) }, pp.name), h('span', null, fmtMoney(bb.profit) + ' / mies.'))));
+      box.append(ul);
+    }
+  }
+  function renderBizPoland(box) {
+    box.append(h('div', { class: 'region-head' },
+      h('div', null, h('div', { class: 'eyebrow' }, 'Cała Polska · ' + state.B.year + ' r.'), h('h2', null, 'Polska')),
+      h('div', { class: 'rank-chip' }, R[state.level].size + ' ' + (state.level === 'woj' ? 'województw' : 'powiatów'))
+    ));
+    box.append(h('p', { class: 'hint', style: 'margin-top:10px' }, 'Kliknij województwo albo powiat na mapie, żeby zobaczyć jego zespół i rachunek. Sumę Twojego planu znajdziesz w zakładce Plan.'));
+    const T = BT;
+    box.append(h('div', { class: 'team' },
+      teamRow('wrench', T.tp + ' ' + plural(T.tp, 'ekipa', 'ekipy', 'ekip'), 'w całej Polsce (' + fteTxt(T.tech) + ', zaokrąglone w każdym województwie) · ' + jobsTxt(T.jobs) + ' / mies.', T.tech),
+      teamRow('headset', T.rp + ' ' + plural(T.rp, 'opiekun', 'opiekunów', 'opiekunów') + ' klienta', fmtInt(T.leads) + ' ' + plural(T.leads, 'lead', 'leady', 'leadów') + ' miesięcznie (' + fteTxt(T.reps) + ')', T.reps)
+    ));
+    box.append(flowRow(T));
+    box.append(h('div', { class: 'section-title' }, 'Rachunek miesięczny: cała Polska'));
+    box.append(pnlWaterfall(T).el);
+    box.append(h('p', { class: 'hint wf-foot' }, 'Przy pełnych etatach: ', h('b', { class: T.fullProfit < 0 ? 'neg' : null }, fmtMoney(T.fullProfit) + ' zysku miesięcznie'), '.'));
+    const top = DATA.woj.map((u) => [u, R.woj.get(u.id).b]).sort((a, c) => c[1].profit - a[1].profit).slice(0, 6);
+    box.append(h('div', { class: 'section-title' }, 'Województwa z największym zyskiem'));
+    const ul = h('ul', { class: 'list-clean mini-list' });
+    top.forEach(([u, bb]) => ul.append(h('li', null, h('button', { type: 'button', onclick: () => select('woj', u.id, true) }, u.name), h('span', null, fmtMoney(bb.profit) + ' / mies.'))));
+    box.append(ul);
+  }
+  function overrideEditor(lvl, id) {
+    const wrap = h('div', { class: 'ovr' });
+    const own = (state.ovr[lvl] && state.ovr[lvl][id]) || {};
+    const inh = inheritedParams(lvl, id);
+    const inhShare = inh.share != null ? inh.share : (calibRate != null ? null : state.A.share);
+    const fromTxt = lvl === 'pow' && inh.from === 'woj' ? 'jak w województwie' : 'jak w planie';
+    const setO = (k, v) => {
+      const o = state.ovr[lvl][id] || {};
+      if (v == null) delete o[k]; else o[k] = v;
+      if (Object.keys(o).length) state.ovr[lvl][id] = o; else delete state.ovr[lvl][id];
+      onBizChange();
+    };
+    const price = h('input', { type: 'number', min: '300', max: '20000', step: '50', placeholder: fmtInt(inh.price) + ' zł (' + fromTxt + ')', 'aria-label': 'Cena brutto w regionie' });
+    if (own.price != null) price.value = String(own.price);
+    price.addEventListener('change', () => { const v = +price.value; setO('price', price.value === '' || !isFinite(v) ? null : Math.min(20000, Math.max(300, v))); });
+    const seg = h('div', { class: 'seg seg-sm', role: 'group', 'aria-label': 'Czyszczeń dziennie na ekipę w regionie' });
+    [[null, (fromTxt === 'jak w planie' ? 'Jak w planie' : 'Jak w województwie') + ' (' + inh.perDay + ')'], [1, '1 dziennie'], [2, '2 dziennie']].forEach(([v, l]) => {
+      seg.append(h('button', { type: 'button', 'aria-pressed': String((own.perDay == null ? null : own.perDay) === v), onclick: () => setO('perDay', v) }, l));
+    });
+    const share = h('input', { type: 'number', min: '0', max: '100', step: '1', placeholder: inhShare != null ? fmtInt(inhShare) + '% (' + fromTxt + ')' : 'z kalibracji', 'aria-label': 'Twój udział w realnym rynku w regionie, w procentach' });
+    if (own.share != null) share.value = String(own.share);
+    share.addEventListener('change', () => { const v = +share.value; setO('share', share.value === '' || !isFinite(v) ? null : Math.min(100, Math.max(0, v))); });
+    wrap.append(
+      h('div', { class: 'as-row' }, h('div', { class: 'top' }, h('span', null, 'Czyszczeń dziennie na ekipę')), seg),
+      h('div', { class: 'as-row' }, h('div', { class: 'top' }, h('span', null, 'Cena dla klienta w regionie (zł brutto)')), price),
+      h('div', { class: 'as-row' }, h('div', { class: 'top' }, h('span', null, 'Twój udział w realnym rynku w regionie (%)')), share),
+      h('p', { class: 'src', style: 'margin:8px 0 0' }, 'Puste pole znaczy: ' + fromTxt + '.' + (lvl === 'woj' ? ' Ustawienia województwa przejmują też jego powiaty.' : ''))
+    );
+    if (Object.keys(own).length) wrap.append(h('button', { type: 'button', class: 'btn btn-ghost btn-small', style: 'margin-top:10px', onclick: () => { delete state.ovr[lvl][id]; onBizChange(); } }, 'Wyczyść ustawienia regionu'));
+    return wrap;
+  }
+
+  // ---------- panel: plan
+  function bizSlider(key, label, min, max, step, unit, src, fmt) {
+    const show = () => (fmt ? fmt(state.B[key]) : state.B[key]) + unit;
+    const val = h('b', null, show());
+    const inp = h('input', { type: 'range', min: String(min), max: String(max), step: String(step), value: String(state.B[key]), 'aria-label': label });
+    const upd = rafThrottle(() => { state.B[key] = +inp.value; val.textContent = show(); onBizChange({ live: true }); });
+    inp.addEventListener('input', upd);
+    return h('div', { class: 'as-row' }, h('div', { class: 'top' }, h('span', null, label), val), inp, src ? h('div', { class: 'src' }, src) : null);
+  }
+  function bizNumber(key, label, min, max, step, src) {
+    const inp = h('input', { type: 'number', min: String(min), max: String(max), step: String(step), value: String(state.B[key]), 'aria-label': label });
+    inp.addEventListener('change', () => {
+      let v = +inp.value;
+      if (inp.value === '' || !isFinite(v)) v = BIZ_DEFAULTS[key];
+      v = Math.min(max, Math.max(min, v));
+      inp.value = String(v);
+      state.B[key] = v;
+      onBizChange();
+    });
+    return h('div', { class: 'as-row' }, h('div', { class: 'top' }, h('span', null, label)), inp, src ? h('div', { class: 'src' }, src) : null);
+  }
+  function perDaySeg() {
+    const seg = h('div', { class: 'seg seg-sm', role: 'group', 'aria-label': 'Czyszczeń dziennie na ekipę' });
+    [1, 2].forEach((v) => seg.append(h('button', { type: 'button', 'data-pd': String(v), 'aria-pressed': String(state.B.perDay === v), onclick: () => setPerDay(v) }, v + ' dziennie')));
+    return seg;
+  }
+  function yearSelect() {
+    const s = h('select', { class: 'select-plain', 'data-year': '1', 'aria-label': 'Rok prognozy' });
+    for (let y = NOW; y <= NOW + 7; y++) s.append(h('option', { value: String(y) }, y === NOW ? y + ' (dziś)' : String(y)));
+    s.value = String(state.B.year);
+    s.addEventListener('change', () => setYear(+s.value));
+    return s;
+  }
+  function renderPlan() {
+    const box = $('tab-plan');
+    box.textContent = '';
+    planA = h('div');
+    planB = h('div');
+    const B = state.B;
+    const shareRow = (() => {
+      const val = h('b', null, state.A.share + '%');
+      const inp = h('input', { type: 'range', min: '1', max: '100', step: '1', value: String(state.A.share), 'aria-label': 'Twój udział w realnym rynku' });
+      inp.addEventListener('input', rafThrottle(() => { state.A.share = +inp.value; val.textContent = state.A.share + '%'; onAssumptionChange(); }));
+      return h('div', { class: 'as-row' }, h('div', { class: 'top' }, h('span', null, 'Twój udział w realnym rynku'), val), inp,
+        h('div', { class: 'src' }, calibRate != null ? 'Kalibracja jest włączona (zakładka Założenia), więc zlecenia liczymy z tempa w bazie, a ten suwak nie działa.' : 'To samo założenie co w trybie potencjału. Konin dziś: ok. 30 zleceń miesięcznie wychodzi przy ok. 30%.'));
+    })();
+    box.append(
+      planA,
+      h('div', { class: 'as-group' },
+        h('h3', null, 'Najważniejsze dźwignie'),
+        h('div', { class: 'as-row' }, h('div', { class: 'top' }, h('span', null, 'Czyszczeń dziennie na ekipę')), perDaySeg(),
+          h('div', { class: 'src' }, 'Strona: „1 dzień tyle trwa czyszczenie całego domu”, sama podłogówka 4–7 h. Kalendarz CP01 ma 2 okna dziennie (8–13 i 14–19).')),
+        h('div', { class: 'as-row' }, h('div', { class: 'top' }, h('span', null, 'Rok prognozy')), yearSelect(),
+          h('div', { class: 'src' }, 'Z każdym rokiem do czyszczenia dochodzą młodsze podłogówki, więc rynek rośnie.')),
+        bizNumber('price', 'Cena dla klienta (zł brutto)', 300, 20000, 50, 'Strona: od 2 200 zł brutto. Średnia z zaplanowanych czyszczeń w Notion: ok. 2 180 zł.'),
+        bizSlider('close', 'Skuteczność: leady, które kończą się zleceniem', 2, 40, 1, '%', 'Konin, listopad 2026: ok. 8% leadów, z którymi była rozmowa, umówiło czyszczenie, a 30 czeka po propozycji.'),
+        bizNumber('cpl', 'Koszt leada (zł)', 0.5, 300, 0.5, 'Kampania Konin od 31.10.2026: 2,54 zł (280 leadów za 711 zł). Przy większym budżecie i nowych regionach licz więcej.'),
+        shareRow
+      ),
+      planB,
+      h('details', { class: 'as-group adv' },
+        h('summary', null, 'Koszty i wydajność zespołu'),
+        h('p', { class: 'gdesc' }, 'Stawki to założenia do zmiany. 8 000 zł brutto na umowie o pracę kosztuje pracodawcę ok. 9 650 zł miesięcznie (ze składkami ZUS pracodawcy).'),
+        bizSlider('days', 'Dni pracy ekipy w miesiącu', 15, 26, 1, ' dni', 'Średnio ok. 21 dni roboczych minus urlopy.'),
+        bizNumber('techCost', 'Koszt ekipy miesięcznie (zł): pensja z ZUS, auto, sprzęt', 0, 60000, 100),
+        bizNumber('techBonus', 'Premia technika od czyszczenia (zł)', 0, 2000, 10),
+        bizNumber('jobCost', 'Chemia, inhibitor i dojazd na czyszczenie (zł)', 0, 2000, 10),
+        bizNumber('leadsPerRep', 'Leadów miesięcznie na jednego opiekuna klienta', 20, 2000, 10, 'Ile nowych leadów jedna osoba porządnie obsłuży: kilka prób dodzwonienia, SMS, propozycja, przypomnienie.'),
+        bizNumber('repCost', 'Koszt opiekuna klienta miesięcznie (zł, z ZUS)', 0, 60000, 100),
+        bizNumber('repBonus', 'Premia opiekuna od opłaconego zlecenia (zł)', 0, 2000, 10),
+        bizNumber('fee', 'Twoja prowizja od opłaconego zlecenia (zł)', 0, 5000, 10),
+        bizNumber('vat', 'VAT od ceny (%)', 0, 23, 1, 'Przy czyszczeniu instalacji w domu zwykle 8%; potwierdźcie stawkę z księgową.')
+      ),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+        h('button', { type: 'button', class: 'btn btn-ghost btn-small', onclick: () => { state.B = Object.assign({}, BIZ_DEFAULTS); onBizChange(); renderPlan(); syncBizControls(); toast('Przywrócono domyślne założenia modelu biznesowego'); } }, 'Przywróć domyślne założenia modelu')
+      )
+    );
+    renderPlanOutputs();
+  }
+  function renderPlanOutputs() {
+    if (!planA || !planB || !planA.isConnected) return;
+    planA.textContent = '';
+    planB.textContent = '';
+    const lvl = state.level, B = state.B;
+    const items = planItems(lvl);
+    planA.append(h('p', { class: 'hint' }, 'Plan to ', h('b', null, lvl === 'woj' ? 'województwa' : 'powiaty'), ' oznaczone na mapie jako Działamy, Następny albo Testujemy. Status zmienisz w karcie regionu. Liczby na ' + B.year + ' r.'));
+    if (!items.length) {
+      planA.append(h('div', { class: 'calib-out', style: 'margin-bottom:12px' }, 'Na tym poziomie nie masz jeszcze regionów w planie. Kliknij region na mapie i oznacz go jako Działamy, Następny albo Testujemy.'));
+    } else {
+      const T = teamSummary(items);
+      const tbl = h('table', { class: 'plan-table' });
+      tbl.append(h('tr', null, h('th', null, 'Status'), h('th', null, 'Regiony'), h('th', null, 'Ekipy'), h('th', null, 'Opiekunowie'), h('th', null, 'Leady / mies.'), h('th', null, 'Zysk / mies.')));
+      PLAN_KEYS.forEach((k) => {
+        const its = items.filter((x) => x.s === k);
+        if (!its.length) return;
+        const t = sumBiz(its.map((x) => [x.b, 1]));
+        tbl.append(h('tr', null,
+          h('td', null, h('span', { class: 'st-dot', style: 'background:' + STATUS[k].color, icon: STATUS[k].icon }), STATUS[k].label),
+          h('td', null, String(its.length)), h('td', null, fmtDec(t.tech, 1)), h('td', null, fmtDec(t.reps, 1)), h('td', null, fmtInt(t.leads)), h('td', { class: t.profit < 0 ? 'neg' : null }, fmtMoney(t.profit))));
+      });
+      tbl.append(h('tr', { class: 'total' }, h('td', null, 'Razem'), h('td', null, String(items.length)), h('td', null, fmtDec(T.tech, 1)), h('td', null, fmtDec(T.reps, 1)), h('td', null, fmtInt(T.leads)), h('td', { class: T.profit < 0 ? 'neg' : null }, fmtMoney(T.profit))));
+      planA.append(h('div', { class: 'table-wrap' }, tbl));
+      planA.append(h('div', { class: 'team', style: 'margin-top:12px' },
+        teamRow('wrench', T.tp + ' ' + plural(T.tp, 'ekipa', 'ekipy', 'ekip') + ' do zatrudnienia', fteTxt(T.tech) + ' przy ' + B.perDay + ' ' + plural(B.perDay, 'czyszczeniu', 'czyszczeniach', 'czyszczeniach') + ' dziennie, zaokrąglone w górę w każdym województwie', T.tech),
+        teamRow('headset', T.rp + ' ' + plural(T.rp, 'opiekun', 'opiekunów', 'opiekunów') + ' klienta', fteTxt(T.reps) + ' na ' + fmtInt(T.leads) + ' ' + plural(T.leads, 'lead', 'leady', 'leadów') + ' miesięcznie (budżet reklam ' + fmtMoney(T.ads) + ')', T.reps)
+      ));
+      planA.append(h('div', { class: 'section-title' }, 'Rachunek miesięczny planu'));
+      planA.append(pnlWaterfall(T).el);
+      planA.append(h('p', { class: 'hint wf-foot' }, 'Przy pełnych etatach (' + T.tp + ' ' + plural(T.tp, 'ekipa', 'ekipy', 'ekip') + ', ' + T.rp + ' ' + plural(T.rp, 'opiekun', 'opiekunów', 'opiekunów') + '): ',
+        h('b', { class: T.fullProfit < 0 ? 'neg' : null }, fmtMoney(T.fullProfit) + ' zysku miesięcznie'), '. Rocznie: przychód netto ' + fmtMoney(T.rev * 12) + ', zysk ' + fmtMoney(T.fullProfit * 12) + ', Twoja prowizja ' + fmtMoney(T.feeC * 12) + '.'));
+      planA.append(h('div', { class: 'section-title' }, 'Regiony w planie'));
+      const ul = h('ul', { class: 'list-clean mini-list' });
+      items.slice().sort((a, c) => c.b.profit - a.b.profit).slice(0, 20).forEach((x) => ul.append(h('li', null,
+        h('button', { type: 'button', onclick: () => select(x.lvl, x.id, true) }, h('span', { class: 'st-dot', style: 'background:' + STATUS[x.s].color + ';margin-right:6px;vertical-align:-3px', icon: STATUS[x.s].icon }), unitName(x.lvl, x.id)),
+        h('span', null, fmtDec(x.b.tech, 1) + ' ek. · ' + fmtMoney(x.b.profit)))));
+      planA.append(ul);
+    }
+    const ue = unitEcon(), u1 = unitEcon(1), u2 = unitEcon(2);
+    planB.append(h('div', { class: 'as-group' },
+      h('h3', null, 'Jedno czyszczenie przy tych założeniach'),
+      waterfall({ label: 'Cena dla klienta', value: ue.gross, note: 'brutto' }, [
+        { label: 'VAT', value: ue.vat, note: B.vat + '%' },
+        { label: 'Reklamy', value: ue.ads, note: fmtDec(100 / Math.max(0.1, B.close), 1) + ' leada na zlecenie' },
+        { label: 'Opiekun klienta', value: ue.rep, note: 'czas na leady i premia' },
+        { label: 'Ekipa', value: ue.tech, note: 'etat przy ' + B.perDay + ' dziennie i premia' },
+        { label: 'Chemia, inhibitor, dojazd', value: ue.mat },
+        { label: 'Twoja prowizja', value: ue.fee }
+      ], 'Zysk firmy z czyszczenia', ue.net > 0 ? 'marża ' + fmtDec(ue.margin * 100, 0) + '% od ceny netto' : null).el,
+      h('div', { class: 'compare' },
+        h('div', { class: 'cmp' + (B.perDay === 1 ? ' on' : '') }, h('span', null, '1 czyszczenie dziennie'), h('b', { class: u1.profit < 0 ? 'neg' : null }, fmtMoney(u1.profit)), h('span', null, 'zysku z czyszczenia')),
+        h('div', { class: 'cmp' + (B.perDay === 2 ? ' on' : '') }, h('span', null, '2 czyszczenia dziennie'), h('b', { class: u2.profit < 0 ? 'neg' : null }, fmtMoney(u2.profit)), h('span', null, 'zysku z czyszczenia'))
+      ),
+      h('p', { class: 'hint wf-foot' }, isFinite(ue.breakEven) ? 'Ekipa zarabia na siebie od ' + fmtInt(Math.ceil(ue.breakEven)) + ' ' + plural(Math.ceil(ue.breakEven), 'czyszczenia', 'czyszczeń', 'czyszczeń') + ' w miesiącu. Każde kolejne to ok. ' + fmtMoney(ue.net - ue.ads - ue.rep - B.techBonus - ue.mat - ue.fee) + ' dla firmy.' : 'Przy tych założeniach czyszczenie nie pokrywa kosztów nawet bez pensji ekipy.')
+    ));
+  }
+
+  // ---------- bazy
+  function baseBiz(fm) {
+    let jobs = 0, market = 0;
+    for (const [pid, f] of fm) { const b = R.pow.get(pid).b; if (b) { jobs += b.jobs * f; market += b.market * f; } }
+    const b = bizFromJobs(jobs, market, { price: state.B.price, perDay: state.B.perDay, share: null });
+    const t = teamSummary([{ b, woj: 'x' }]);
+    b.tp = t.tp; b.rp = t.rp; b.fullProfit = t.fullProfit;
+    return b;
+  }
+  function baseBizBlock(fm, title) {
+    const b = baseBiz(fm);
+    return h('div', { class: 'base-biz' },
+      h('div', { class: 'bb-t' }, title || ('Model biznesowy · ' + state.B.year + ' r.')),
+      h('div', { class: 'base-stats' },
+        h('div', null, h('b', null, b.tp + ' ' + plural(b.tp, 'ekipa', 'ekipy', 'ekip')), h('span', null, fteTxt(b.tech) + ' przy ' + state.B.perDay + ' dziennie · ' + jobsTxt(b.jobs) + ' / mies.')),
+        h('div', null, h('b', null, b.rp + ' ' + plural(b.rp, 'opiekun', 'opiekunów', 'opiekunów')), h('span', null, fteTxt(b.reps) + ' · ' + fmtInt(b.leads) + ' ' + plural(b.leads, 'lead', 'leady', 'leadów') + ' / mies.')),
+        h('div', null, h('b', null, fmtMoney(b.rev)), h('span', null, 'przychodu netto / mies. · reklamy ' + fmtMoney(b.ads))),
+        h('div', null, h('b', { class: b.fullProfit < 0 ? 'neg' : null }, fmtMoney(b.fullProfit)), h('span', null, 'zysku / mies. przy pełnych etatach · Twoja prowizja ' + fmtMoney(b.feeC)))
+      )
+    );
+  }
+
+  // ---------- KPI, formuła, przełączniki
+  function renderBizKPIs(k) {
+    const lvl = state.level, B = state.B;
+    let items = planItems(lvl), scope;
+    if (items.length) scope = 'Twój plan: ' + items.length + ' ' + plural(items.length, 'region', 'regiony', 'regionów');
+    else { items = polandItems(); scope = 'cała Polska'; }
+    const T = teamSummary(items);
+    const tile = (icon, v, l, accent) => h('div', { class: 'kpi' + (accent ? ' kpi-accent' : '') }, h('div', null, h('div', { class: 'kpi-ico', icon }), h('div', { class: 'kpi-v' }, v)), h('div', { class: 'kpi-l' }, l));
+    k.append(
+      tile('wrench', T.tp + ' ' + plural(T.tp, 'ekipa', 'ekipy', 'ekip'), 'techników (' + fteTxt(T.tech) + ' przy ' + B.perDay + ' ' + plural(B.perDay, 'czyszczeniu', 'czyszczeniach', 'czyszczeniach') + ' dziennie) · ' + scope),
+      tile('headset', T.rp + ' ' + plural(T.rp, 'opiekun', 'opiekunów', 'opiekunów'), 'klienta do obsługi ' + fmtInt(T.leads) + ' ' + plural(T.leads, 'leada', 'leadów', 'leadów') + ' miesięcznie (' + fteTxt(T.reps) + ')'),
+      tile('coins', fmtMoney(T.rev), 'przychodu netto miesięcznie z ' + jobsGen(T.jobs) + ' (' + B.year + ' r.)'),
+      tile('target', fmtMoney(T.fullProfit), 'zysku firmy miesięcznie przy pełnych etatach · Twoja prowizja ' + fmtMoney(T.feeC), true)
+    );
+  }
+  function renderBizFormula() {
+    const f = $('formula-biz');
+    if (!f) return;
+    f.textContent = '';
+    if (state.mode !== 'biz') return;
+    const B = state.B;
+    f.append(h('b', null, 'Model biznesowy przy obecnych ustawieniach'));
+    const ol = h('ol');
+    ol.append(h('li', null, 'Zlecenia miesięcznie = Twoje zlecenia w roku ÷ 12, z rynku na ' + B.year + ' r. (do czyszczenia instalacje z domów zbudowanych do ' + (B.year - state.A.minAge) + ' r.).'));
+    ol.append(h('li', null, 'Ekipy (etaty) = zlecenia ÷ (' + B.perDay + ' ' + plural(B.perDay, 'czyszczenie', 'czyszczenia', 'czyszczeń') + ' dziennie × ' + B.days + ' dni pracy w miesiącu).'));
+    ol.append(h('li', null, 'Leady = zlecenia ÷ ' + fmtDec(B.close, 0) + '% skuteczności. Opiekunowie (etaty) = leady ÷ ' + fmtInt(B.leadsPerRep) + ' leadów na osobę miesięcznie.'));
+    ol.append(h('li', null, 'Przychód netto = zlecenia × cena brutto (' + fmtInt(B.price) + ' zł, chyba że region ma własną) ÷ ' + fmtDec(1 + B.vat / 100, 2) + ' (VAT ' + B.vat + '%).'));
+    ol.append(h('li', null, 'Koszty: reklamy = leady × ' + fmtDec(B.cpl, 2) + ' zł; opiekunowie = etaty × ' + fmtInt(B.repCost) + ' zł + ' + fmtInt(B.repBonus) + ' zł premii od zlecenia; ekipy = etaty × ' + fmtInt(B.techCost) + ' zł + ' + fmtInt(B.techBonus) + ' zł premii od czyszczenia; chemia i dojazd = ' + fmtInt(B.jobCost) + ' zł od czyszczenia; Twoja prowizja = ' + fmtInt(B.fee) + ' zł od zlecenia.'));
+    ol.append(h('li', null, 'Zysk firmy = przychód netto minus koszty, przed podatkiem dochodowym i bez kosztów biura. W regionach etaty liczymy z ułamkami. Pełne etaty w planie: ekipy zaokrąglamy w górę osobno w każdym województwie, opiekunów łącznie, bo dzwonią do wszystkich regionów.'));
+    f.append(ol);
+  }
+  function fillMetricSelect() {
+    const sel = $('metric');
+    sel.textContent = '';
+    const defs = state.mode === 'biz' ? BIZ_METRICS : METRICS;
+    for (const k in defs) sel.append(h('option', { value: k }, defs[k].label));
+    sel.value = state.mode === 'biz' ? state.bizMetric : state.metric;
+  }
+  function syncBizControls() {
+    document.querySelectorAll('[data-pd]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.pd === state.B.perDay)));
+    document.querySelectorAll('select[data-year]').forEach((s) => { s.value = String(state.B.year); });
+  }
+  function applyModeUI() {
+    const biz = state.mode === 'biz';
+    document.body.classList.toggle('mode-biz', biz);
+    document.querySelectorAll('#mode-seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+    fillMetricSelect();
+    if (!HERO_POT.title) { HERO_POT.badge = $('hero-badge').textContent; HERO_POT.title = $('hero-title').textContent; HERO_POT.sub = $('hero-sub').textContent; }
+    const t = biz ? HERO_BIZ : HERO_POT;
+    $('hero-badge').textContent = t.badge;
+    $('hero-title').textContent = t.title;
+    $('hero-sub').textContent = t.sub;
+    $('map').setAttribute('aria-label', biz ? 'Mapa Polski z modelem biznesowym czyszczenia podłogówki' : 'Mapa Polski z potencjałem czyszczenia podłogówki');
+    if (!biz && state.tab === 'plan') state.tab = 'region';
+    syncBizControls();
+  }
+  function setMode(mode) {
+    if (state.mode === mode) return;
+    state.mode = mode;
+    applyModeUI();
+    refreshFills();
+    redrawOverlays();
+    renderKPIs();
+    renderFormula();
+    openTab(state.tab);
+    save();
+  }
+  function setYear(y) { state.B.year = Math.min(NOW + 7, Math.max(NOW, y)); onBizChange(); syncBizControls(); }
+  function setPerDay(v) { state.B.perDay = v === 2 ? 2 : 1; onBizChange(); syncBizControls(); }
+  function onBizChange(opts) {
+    computeBiz();
+    if (state.mode === 'biz') { refreshFills(); redrawOverlays(); }
+    renderKPIs();
+    renderFormula();
+    if (state.tab === 'plan') renderPlanOutputs();
+    else if (!(opts && opts.live)) renderPanel();
+    save();
+  }
+  function wireBizUI() {
+    document.querySelectorAll('#mode-seg button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+    const ys = $('biz-year');
+    for (let y = NOW; y <= NOW + 7; y++) ys.append(h('option', { value: String(y) }, y === NOW ? y + ' (dziś)' : String(y)));
+    ys.addEventListener('change', () => setYear(+ys.value));
+    document.querySelectorAll('#perday-seg [data-pd]').forEach((b) => b.addEventListener('click', () => setPerDay(+b.dataset.pd)));
+  }
+
   // ---------------------------------------------------------------- KPI i formuła
   function renderKPIs() {
     const k = $('kpis');
     k.textContent = '';
+    if (state.mode === 'biz') { renderBizKPIs(k); return; }
     const T = TOTAL;
     const share = T.pool ? T.covered.pool / T.pool * 100 : 0;
     const tile = (icon, v, l, accent) => h('div', { class: 'kpi' + (accent ? ' kpi-accent' : '') }, h('div', null, h('div', { class: 'kpi-ico', icon }), h('div', { class: 'kpi-v' }, v)), h('div', { class: 'kpi-l' }, l));
@@ -1116,6 +1792,7 @@
     ol.append(h('li', null, 'Rynek teoretyczny = domy do czyszczenia ÷ ' + A.cycle + ' lat cyklu. Rynek realny = ' + A.adopt + '% z tego. Przychód = zlecenia × ' + fmtInt(A.price) + ' zł.'));
     ol.append(h('li', null, calibRate != null ? 'Twoje zlecenia = rynek teoretyczny × tempo z bazy ' + baseName(A.calibBase) + ' (' + fmtDec(calibRate * 100, 1) + '% rocznie). Technicy = Twoje zlecenia ÷ ' + A.capacity + '.' : 'Twoje zlecenia = ' + A.share + '% rynku realnego. Technicy = Twoje zlecenia ÷ ' + A.capacity + ' zleceń na etat.'));
     f.append(ol);
+    renderBizFormula();
   }
 
   // ---------------------------------------------------------------- przeliczenia po zmianach
@@ -1126,13 +1803,16 @@
     renderFormula();
     drawCurve();
     renderCalibOut();
-    if (state.tab !== 'zalozenia' || full) { if (state.tab !== 'zalozenia') renderPanel(); }
+    if (state.mode === 'biz') redrawOverlays();
+    if (state.tab === 'plan') renderPlanOutputs();
+    else if (state.tab !== 'zalozenia' || full) { if (state.tab !== 'zalozenia') renderPanel(); }
     save();
   }
   function onDataChange(light) {
     computeAll();
     refreshFills();
     drawBases();
+    if (state.mode === 'biz') drawMarks();
     drawCities();
     renderKPIs();
     renderFormula();
@@ -1172,7 +1852,7 @@
       try {
         applyLoaded(JSON.parse(rd.result));
         save();
-        $('metric').value = state.metric;
+        applyModeUI();
         applyLevel();
         onDataChange();
         toast('Wczytano oznaczenia z pliku');
@@ -1184,9 +1864,12 @@
   // ---------------------------------------------------------------- start
   function wireUI() {
     const sel = $('metric');
-    for (const k in METRICS) sel.append(h('option', { value: k }, METRICS[k].label));
-    sel.value = state.metric;
-    sel.addEventListener('change', () => { state.metric = sel.value; refreshFills(); renderPanel(); save(); });
+    fillMetricSelect();
+    sel.addEventListener('change', () => {
+      if (state.mode === 'biz') { state.bizMetric = sel.value; refreshFills(); redrawOverlays(); }
+      else { state.metric = sel.value; refreshFills(); }
+      renderPanel(); save();
+    });
     document.querySelectorAll('#level-seg button').forEach((b) => b.addEventListener('click', () => {
       if (state.level === b.dataset.level) return;
       state.level = b.dataset.level;
@@ -1209,6 +1892,7 @@
     $('btn-export').addEventListener('click', (e) => exportMenu(e.currentTarget));
     $('import-file').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) importJson(f); e.target.value = ''; });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && addingBase) setAdding(false); });
+    wireBizUI();
   }
 
   async function start() {
@@ -1226,6 +1910,7 @@
     computeAll();
     computeBreaks();
     wireUI();
+    applyModeUI();
     initMap();
     applyLevel();
     drawBases();
