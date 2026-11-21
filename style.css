@@ -479,3 +479,11 @@ body:not(.mode-biz) .biz-only { display: none !important; }
   .flow .st:nth-child(3)::before { display: none; }
   .wf-row { grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) auto; }
 }
+
+/* scenariusz ekip (zakładka Plan) */
+.scn { border-color: var(--yellow); background: #fffdf3; }
+.scn-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.scn-row input[type="number"] { width: 96px; border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 16px; font-family: var(--font-head); font-weight: 700; color: var(--ink); background: #fff; }
+.scn .team { margin-top: 12px; }
+.scn .mini-list { margin-top: 6px; }
+.scn p.src { font-size: 12px; color: var(--muted-2); line-height: 1.4; }

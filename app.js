@@ -65,7 +65,7 @@
     repCost: 9650, repBonus: 100, fee: 450
   };
   const BIZ_METRICS = {
-    bTech: { label: 'Ekipy techników (etaty)', legend: 'Ekipy techników (etaty)', fmt: (v) => fmtDec(v, 1), short: (v) => fmtDec(v, 1), icon: 'wrench' },
+    bTech: { label: 'Ekipy techników (etaty)', legend: 'Ekipy techników (etaty)', fmt: (v) => fmtCrew(v), short: (v) => fmtCrew(v), icon: 'wrench' },
     bProfit: { label: 'Zysk firmy miesięcznie', legend: 'Zysk firmy, zł miesięcznie', fmt: (v) => fmtMoney(v), short: (v) => shortMoney(v), icon: 'coins', signed: true },
     bRev: { label: 'Przychód netto miesięcznie', legend: 'Przychód netto, zł miesięcznie', fmt: (v) => fmtMoney(v), short: (v) => shortMoney(v), icon: 'coins' },
     bJobs: { label: 'Zlecenia miesięcznie', legend: 'Zlecenia miesięcznie', fmt: (v) => fmtDec(v, v < 10 ? 1 : 0), short: (v) => fmtDec(v, v < 10 ? 1 : 0), icon: 'home' },
@@ -1146,12 +1146,13 @@
   const HERO_BIZ = {
     badge: 'Model biznesowy',
     title: 'Ilu ludzi potrzeba i ile z tego zostaje?',
-    sub: 'Te same dane co na mapie potencjału, przeliczone na ekipy techników, opiekunów klienta, leady i pieniądze. Plan to regiony oznaczone jako Działamy, Następny i Testujemy. Zmieniaj liczbę czyszczeń dziennie, ceny i koszty, a liczby przeliczą się od razu.'
+    sub: 'Te same dane co na mapie potencjału, przeliczone na ekipy techników, opiekunów klienta, leady i pieniądze. Rozstaw ekipy w zakładce Plan albo przyciskami + i − w karcie województwa. Zmieniaj liczbę czyszczeń dziennie, ceny i koszty, a liczby przeliczą się od razu.'
   };
   const HERO_POT = {};
+  const CREW_TARGET_DEFAULT = 16;
   let BT = null;
   let pillAnchors = [];
-  let planA = null, planB = null;
+  let planA = null, planB = null, planS = null;
 
   function curMetric() { return state.mode === 'biz' ? BIZ_METRICS[state.bizMetric] : METRICS[state.metric]; }
   function curVal(r) {
@@ -1172,6 +1173,8 @@
     return fmtDec(v, 1) + ' zlecenia';
   }
   function fteTxt(v) { return fmtDec(v, 1) + ' etatu'; }
+  // ekipy rozstawione ręcznie są całe, więc bez przecinka; etaty z popytu z jednym miejscem po przecinku
+  function fmtCrew(v) { return v >= 1 && Math.abs(v - Math.round(v)) < 1e-9 ? fmtInt(v) : fmtDec(v, 1); }
   function jobsGen(v) { // dopełniacz: „z 33 zleceń”
     if (v >= 10) return fmtInt(v) + ' ' + (Math.round(v) === 1 ? 'zlecenia' : 'zleceń');
     return fmtDec(v, 1) + ' zlecenia';
@@ -1249,9 +1252,13 @@
     return b;
   }
 
+  // scenariusz ekip: co najmniej jedno województwo ma ekipy rozstawione przez użytkownika
+  function scnActive() { return Object.keys(state.crews.woj).some((id) => state.crews.woj[id] > 0); }
   function computeBiz() {
     if (!DATA) return;
-    const A = state.A, Y = state.B.year;
+    const A = state.A, Y = state.B.year, days = state.B.days;
+    const scn = scnActive();
+    // 1) popyt w każdym regionie
     ['woj', 'pow'].forEach((lvl) => {
       for (const u of DATA[lvl]) {
         const r = R[lvl].get(u.id);
@@ -1264,14 +1271,36 @@
         r.bTheo = theo / 12;
         r.b = bizFromJobs(oursY / 12, marketY / 12, p);
         r.bDem = r.b;
-        const n = state.crews[lvl] && state.crews[lvl][u.id];
-        if (n > 0) { r.b = bizFromJobs(n * p.perDay * state.B.days, marketY / 12, p); r.b.crews = n; }
+      }
+    });
+    // 2) ekipy w województwach; przy scenariuszu województwa bez ekip nie mają zleceń
+    for (const u of DATA.woj) {
+      const r = R.woj.get(u.id), n = state.crews.woj[u.id] || 0, d = r.bDem;
+      if (n > 0) { r.b = bizFromJobs(n * d.p.perDay * days, d.market, d.p); r.b.crews = n; }
+      else if (scn) { r.b = bizFromJobs(0, d.market, d.p); r.b.crews = 0; }
+    }
+    // 3) powiaty: własne ekipy albo, przy scenariuszu, część zleceń województwa według wielkości rynku
+    const powMarket = new Map();
+    if (scn) for (const u of DATA.pow) powMarket.set(u.woj, (powMarket.get(u.woj) || 0) + R.pow.get(u.id).bDem.market);
+    for (const u of DATA.pow) {
+      const r = R.pow.get(u.id), n = state.crews.pow[u.id] || 0, d = r.bDem;
+      if (n > 0) { r.b = bizFromJobs(n * d.p.perDay * days, d.market, d.p); r.b.crews = n; }
+      else if (scn) {
+        const w = R.woj.get(u.woj).b, tot = powMarket.get(u.woj) || 0;
+        r.b = bizFromJobs(tot > 0 ? w.jobs * d.market / tot : 0, d.market, d.p);
+        r.b.fromWoj = true;
+      }
+    }
+    ['woj', 'pow'].forEach((lvl) => {
+      for (const u of DATA[lvl]) {
+        const r = R[lvl].get(u.id);
         r.b.sat = r.b.market > 0 ? r.b.jobs / r.b.market : 0;
         r.b.satTheo = r.bTheo > 0 ? r.b.jobs / r.bTheo : 0;
         r.b.bSat = r.b.sat;
       }
     });
-    BT = teamSummary(polandItems());
+    BT = teamSummary(scn ? crewItems() : polandItems());
+    BT.scn = scn;
   }
 
   function sumBiz(entries) {
@@ -1299,6 +1328,47 @@
       .map((id) => ({ id, lvl, s: state.marks[lvl][id].s, b: R[lvl].get(id).b, woj: lvl === 'woj' ? id : POW_BY_ID.get(id).woj }));
   }
   function polandItems() { return DATA.woj.map((u) => ({ id: u.id, lvl: 'woj', b: R.woj.get(u.id).b, woj: u.id })); }
+  // regiony z ekipami ustawionymi przez użytkownika; ekipy powiatu liczymy tylko wtedy, gdy jego województwo nie ma własnych
+  function crewItems() {
+    const out = [], wojWith = new Set();
+    for (const id in state.crews.woj) {
+      if (state.crews.woj[id] > 0 && R.woj.has(id)) { wojWith.add(id); out.push({ id, lvl: 'woj', b: R.woj.get(id).b, woj: id }); }
+    }
+    for (const id in state.crews.pow) {
+      if (!(state.crews.pow[id] > 0) || !R.pow.has(id)) continue;
+      const w = POW_BY_ID.get(id).woj;
+      if (!wojWith.has(w)) out.push({ id, lvl: 'pow', b: R.pow.get(id).b, woj: w });
+    }
+    return out;
+  }
+  function crewTotal(items) { return items.reduce((s, x) => s + (x.b.crews || 0), 0); }
+  // scenariusz: N ekip po województwach według realnego rynku w wybranym roku. Każdą kolejną ekipę dostaje
+  // województwo z największym rynkiem na ekipę (metoda D'Hondta), więc żadne nie jest bardziej nasycone niż trzeba.
+  function distributeCrews(n) {
+    n = Math.max(0, Math.min(200, Math.round(+n) || 0));
+    const ws = DATA.woj.map((u) => ({ id: u.id, w: Math.max(0, R.woj.get(u.id).bDem.market || 0), f: 0 }));
+    const out = {};
+    if (ws.some((x) => x.w > 0)) {
+      for (let i = 0; i < n; i++) {
+        let best = null;
+        for (const x of ws) if (x.f < 60 && (!best || x.w / (x.f + 1) > best.w / (best.f + 1))) best = x;
+        if (!best) break;
+        best.f += 1;
+      }
+      ws.forEach((x) => { if (x.f > 0) out[x.id] = x.f; });
+    }
+    state.crews = { woj: out, pow: {} };
+  }
+  // udział ekip w realnym rynku w innym roku (te same ekipy, rynek rośnie)
+  function crewSatIn(items, y) {
+    let jobs = 0, market = 0;
+    for (const x of items) {
+      const u = x.lvl === 'woj' ? WOJ_BY_ID.get(x.id) : POW_BY_ID.get(x.id);
+      jobs += x.b.jobs;
+      market += baseCalc(u, state.A, y).theo * state.A.adopt / 100 / 12;
+    }
+    return market > 0 ? jobs / market : 0;
+  }
 
   // jedno czyszczenie przy ustawieniach planu
   function unitEcon(perDay) {
@@ -1376,8 +1446,10 @@
     else ids = Object.keys(state.marks.pow).filter((id) => state.marks.pow[id].s && R.pow.has(id));
     if (lvl === 'pow' && state.selected && state.selected.lvl === 'pow' && R.pow.has(state.selected.id) && !ids.includes(state.selected.id)) ids.push(state.selected.id);
     const order = ids.map((id) => [id, Math.abs(curVal(R[lvl].get(id)) || 0)]).sort((a, b) => b[1] - a[1]).map((x) => x[0]);
+    const scn = scnActive();
     for (const id of order) {
       const r = R[lvl].get(id);
+      if (scn && r.b && !(r.b.jobs > 0)) continue; // scenariusz: bez ekip, bez plakietki
       const v = curVal(r);
       const u = lvl === 'woj' ? WOJ_BY_ID.get(id) : POW_BY_ID.get(id);
       const pt = map.latLngToContainerPoint(u.c);
@@ -1416,19 +1488,25 @@
   }
   function crewsEditor(lvl, id, r) {
     const n = (state.crews[lvl] && state.crews[lvl][id]) || 0;
+    const scn = scnActive();
     const base = Math.max(1, Math.ceil(r.bDem.tech - 0.1));
     const setN = (v) => { if (v > 0) state.crews[lvl][id] = Math.min(60, v); else delete state.crews[lvl][id]; onBizChange(); };
+    let sub;
+    if (n) sub = 'ustawione przez Ciebie, każda robi ' + r.b.perDay + ' ' + plural(r.b.perDay, 'czyszczenie', 'czyszczenia', 'czyszczeń') + ' dziennie';
+    else if (scn && lvl === 'woj') sub = 'w Twoim scenariuszu nie ma tu ekip. Popyt przy Twoim udziale dałby ' + fteTxt(r.bDem.tech) + '. Kliknij +, żeby dodać ekipę.';
+    else if (scn) sub = 'część ekip województwa według wielkości rynku: ' + fteTxt(r.b.tech) + '. Kliknij +, żeby ustawić ekipy tylko dla tego powiatu.';
+    else sub = 'automatycznie z popytu: ' + fteTxt(r.bDem.tech) + '. Kliknij +, żeby rozstawić własne ekipy.';
     const box = h('div', { class: 'crews' },
       h('div', { class: 'crews-top' },
         h('div', null,
           h('div', { class: 'crews-l' }, 'Ekipy w tym regionie'),
-          h('div', { class: 'crews-s' }, n ? 'ustawione przez Ciebie, każda robi ' + r.b.perDay + ' ' + plural(r.b.perDay, 'czyszczenie', 'czyszczenia', 'czyszczeń') + ' dziennie' : 'automatycznie z popytu: ' + fteTxt(r.bDem.tech) + '. Kliknij +, żeby rozstawić własne ekipy.')),
+          h('div', { class: 'crews-s' }, sub)),
         h('div', { class: 'stepper', role: 'group', 'aria-label': 'Liczba ekip w regionie' },
           h('button', { type: 'button', 'aria-label': 'Mniej ekip', onclick: () => setN(n ? n - 1 : base - 1) }, '−'),
           h('b', null, n ? String(n) : 'auto'),
           h('button', { type: 'button', 'aria-label': 'Więcej ekip', onclick: () => setN(n ? n + 1 : base) }, '+'))),
       satBar(r.b));
-    if (n) box.append(h('button', { type: 'button', class: 'link-btn', onclick: () => setN(0) }, 'Wróć do liczenia z popytu'));
+    if (n) box.append(h('button', { type: 'button', class: 'link-btn', onclick: () => setN(0) }, lvl === 'woj' && scn ? 'Usuń ekipy z tego województwa' : scn ? 'Wróć do ekip z województwa' : 'Wróć do liczenia z popytu'));
     return box;
   }
   function renderBizRegion(box, lvl, id) {
@@ -1443,7 +1521,7 @@
     box.append(flowRow(b));
     box.append(h('div', { class: 'section-title' }, 'Rachunek miesięczny regionu'));
     box.append(pnlWaterfall(b).el);
-    box.append(h('p', { class: 'hint wf-foot' },
+    if (b.jobs > 0) box.append(h('p', { class: 'hint wf-foot' },
       'Gdyby ten region miał własny zespół na pełnych etatach (' + fs.tp + ' ' + plural(fs.tp, 'ekipa', 'ekipy', 'ekip') + ', ' + fs.rp + ' ' + plural(fs.rp, 'opiekun', 'opiekunów', 'opiekunów') + '): ',
       h('b', { class: fs.fullProfit < 0 ? 'neg' : null }, fmtMoney(fs.fullProfit) + ' zysku miesięcznie'), '. Rocznie: przychód netto ' + fmtMoney(b.rev * 12) + ', Twoja prowizja ' + fmtMoney(b.feeC * 12) + '.'));
     box.append(h('div', { class: 'section-title' }, 'Ustawienia dla tego regionu'));
@@ -1469,18 +1547,22 @@
     }
   }
   function renderBizPoland(box) {
+    const T = BT, scn = T.scn;
     box.append(h('div', { class: 'region-head' },
-      h('div', null, h('div', { class: 'eyebrow' }, 'Cała Polska · ' + state.B.year + ' r.'), h('h2', null, 'Polska')),
+      h('div', null, h('div', { class: 'eyebrow' }, (scn ? 'Twoje ekipy · ' : 'Cała Polska · ') + state.B.year + ' r.'), h('h2', null, 'Polska')),
       h('div', { class: 'rank-chip' }, R[state.level].size + ' ' + (state.level === 'woj' ? 'województw' : 'powiatów'))
     ));
-    box.append(h('p', { class: 'hint', style: 'margin-top:10px' }, 'Kliknij województwo albo powiat na mapie, żeby zobaczyć jego zespół i rachunek. Sumę Twojego planu znajdziesz w zakładce Plan.'));
-    const T = BT;
+    box.append(h('p', { class: 'hint', style: 'margin-top:10px' }, scn
+      ? 'Liczby to suma ekip, które rozstawiłeś. Województwa bez ekip nie mają zleceń. Kliknij województwo, żeby zmienić jego ekipy przyciskami + i −, albo wpisz inną liczbę w zakładce Plan.'
+      : 'Kliknij województwo albo powiat na mapie, żeby zobaczyć jego zespół i rachunek. Sumę Twojego planu znajdziesz w zakładce Plan.'));
     box.append(h('div', { class: 'team' },
-      teamRow('wrench', T.tp + ' ' + plural(T.tp, 'ekipa', 'ekipy', 'ekip'), 'w całej Polsce (' + fteTxt(T.tech) + ', zaokrąglone w każdym województwie) · ' + jobsTxt(T.jobs) + ' / mies.', T.tech),
+      teamRow('wrench', T.tp + ' ' + plural(T.tp, 'ekipa', 'ekipy', 'ekip'), scn
+        ? 'rozstawionych przez Ciebie · ' + jobsTxt(T.jobs) + ' / mies., czyli ' + fmtDec(T.market > 0 ? T.jobs / T.market * 100 : 0, 0) + '% realnego rynku w województwach z ekipami'
+        : 'w całej Polsce (' + fteTxt(T.tech) + ', zaokrąglone w każdym województwie) · ' + jobsTxt(T.jobs) + ' / mies.', T.tech),
       teamRow('headset', T.rp + ' ' + plural(T.rp, 'opiekun', 'opiekunów', 'opiekunów') + ' klienta', fmtInt(T.leads) + ' ' + plural(T.leads, 'lead', 'leady', 'leadów') + ' miesięcznie (' + fteTxt(T.reps) + ')', T.reps)
     ));
     box.append(flowRow(T));
-    box.append(h('div', { class: 'section-title' }, 'Rachunek miesięczny: cała Polska'));
+    box.append(h('div', { class: 'section-title' }, scn ? 'Rachunek miesięczny Twoich ekip' : 'Rachunek miesięczny: cała Polska'));
     box.append(pnlWaterfall(T).el);
     box.append(h('p', { class: 'hint wf-foot' }, 'Przy pełnych etatach: ', h('b', { class: T.fullProfit < 0 ? 'neg' : null }, fmtMoney(T.fullProfit) + ' zysku miesięcznie'), '.'));
     const top = DATA.woj.map((u) => [u, R.woj.get(u.id).b]).sort((a, c) => c[1].profit - a[1].profit).slice(0, 6);
@@ -1559,7 +1641,23 @@
     box.textContent = '';
     planA = h('div');
     planB = h('div');
+    planS = h('div');
     const B = state.B;
+    const scnInput = h('input', { type: 'number', min: '1', max: '200', step: '1', value: String(crewTotal(crewItems()) || CREW_TARGET_DEFAULT), 'aria-label': 'Liczba ekip do rozstawienia' });
+    const runScn = () => {
+      const n = Math.max(1, Math.min(200, Math.round(+scnInput.value) || CREW_TARGET_DEFAULT));
+      scnInput.value = String(n);
+      distributeCrews(n);
+      if (state.level !== 'woj') { state.level = 'woj'; if (state.selected && state.selected.lvl !== 'woj') state.selected = null; applyLevel(); }
+      onBizChange();
+      toast('Rozstawiono ' + n + ' ' + plural(n, 'ekipę', 'ekipy', 'ekip') + ' według wielkości rynku w województwach');
+    };
+    scnInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runScn(); });
+    const scnGroup = h('div', { class: 'as-group scn' },
+      h('h3', null, 'Scenariusz: ile ekip'),
+      h('p', { class: 'gdesc' }, 'Wpisz liczbę ekip i rozstaw je po województwach według wielkości realnego rynku. Potem poprawisz je przyciskami + i − w karcie województwa.'),
+      h('div', { class: 'scn-row' }, scnInput, h('button', { type: 'button', class: 'btn btn-blue btn-small', onclick: runScn }, 'Rozstaw według rynku')),
+      planS);
     const shareRow = (() => {
       const val = h('b', null, state.A.share + '%');
       const inp = h('input', { type: 'range', min: '1', max: '100', step: '1', value: String(state.A.share), 'aria-label': 'Twój udział w realnym rynku' });
@@ -1568,6 +1666,7 @@
         h('div', { class: 'src' }, calibRate != null ? 'Kalibracja jest włączona (zakładka Założenia), więc zlecenia liczymy z tempa w bazie, a ten suwak nie działa.' : 'To samo założenie co w trybie potencjału. Konin dziś: ok. 30 zleceń miesięcznie wychodzi przy ok. 30%.'));
     })();
     box.append(
+      scnGroup,
       planA,
       h('div', { class: 'as-group' },
         h('h3', null, 'Najważniejsze dźwignie'),
@@ -1600,14 +1699,49 @@
     );
     renderPlanOutputs();
   }
+  function renderCrewScenario(box) {
+    const B = state.B, ci = crewItems();
+    if (!ci.length) {
+      box.append(h('p', { class: 'src', style: 'margin:8px 0 0' }, 'Na razie nie masz rozstawionych ekip, więc mapa liczy ekipy z popytu przy Twoim udziale w rynku.'));
+      return;
+    }
+    const S = teamSummary(ci);
+    const theo = ci.reduce((s, x) => s + (R[x.lvl].get(x.id).bTheo || 0), 0);
+    const pd = B.perDay + ' ' + plural(B.perDay, 'czyszczeniu', 'czyszczeniach', 'czyszczeniach') + ' dziennie';
+    box.append(h('div', { class: 'team', style: 'margin-top:12px' },
+      teamRow('wrench', S.tp + ' ' + plural(S.tp, 'ekipa', 'ekipy', 'ekip'), jobsTxt(S.jobs) + ' miesięcznie przy ' + pd + ' · ' + ci.length + ' ' + (ci.every((x) => x.lvl === 'woj') ? plural(ci.length, 'województwo', 'województwa', 'województw') : plural(ci.length, 'region', 'regiony', 'regionów')), S.tech),
+      teamRow('headset', S.rp + ' ' + plural(S.rp, 'opiekun', 'opiekunów', 'opiekunów') + ' klienta', fmtInt(S.leads) + ' ' + plural(S.leads, 'lead', 'leady', 'leadów') + ' miesięcznie przy skuteczności ' + fmtDec(B.close, 0) + '% (budżet reklam ' + fmtMoney(S.ads) + ')', S.reps)
+    ));
+    box.append(satBar(Object.assign({}, S, { sat: S.market > 0 ? S.jobs / S.market : 0, satTheo: theo > 0 ? S.jobs / theo : 0 })));
+    const later = [];
+    for (const y of [NOW + 2, NOW + 4]) if (y > B.year && y <= NOW + 7) later.push('w ' + y + ' r. ' + fmtDec(crewSatIn(ci, y) * 100, 0) + '%');
+    if (later.length) box.append(h('p', { class: 'src', style: 'margin:6px 0 0' }, 'Te same ekipy, a rynek rośnie: ' + later.join(', ') + ' realnego rynku.'));
+    box.append(h('p', { class: 'hint wf-foot' }, 'Miesięcznie: przychód netto ' + fmtMoney(S.rev) + ', zysk firmy przy pełnych etatach ', h('b', { class: S.fullProfit < 0 ? 'neg' : null }, fmtMoney(S.fullProfit)), ', Twoja prowizja ' + fmtMoney(S.feeC) + '. Rocznie: przychód netto ' + fmtMoney(S.rev * 12) + ', zysk ' + fmtMoney(S.fullProfit * 12) + ', Twoja prowizja ' + fmtMoney(S.feeC * 12) + '.'));
+    const ul = h('ul', { class: 'list-clean mini-list' });
+    ci.slice().sort((a, c) => (c.b.crews || 0) - (a.b.crews || 0) || c.b.sat - a.b.sat).forEach((x) => ul.append(h('li', null,
+      h('button', { type: 'button', onclick: () => select(x.lvl, x.id, true) }, unitName(x.lvl, x.id)),
+      h('span', { class: x.b.sat > 1 ? 'neg' : null }, x.b.crews + ' ' + plural(x.b.crews, 'ekipa', 'ekipy', 'ekip') + ' · ' + fmtDec(x.b.sat * 100, 0) + '% rynku'))));
+    box.append(ul);
+    box.append(h('button', { type: 'button', class: 'link-btn', onclick: () => { state.crews = { woj: {}, pow: {} }; onBizChange(); toast('Wyczyszczono ekipy. Mapa liczy znowu z popytu.'); } }, 'Wyczyść ekipy i wróć do liczenia z popytu'));
+  }
   function renderPlanOutputs() {
     if (!planA || !planB || !planA.isConnected) return;
     planA.textContent = '';
     planB.textContent = '';
+    if (planS) { planS.textContent = ''; renderCrewScenario(planS); }
     const lvl = state.level, B = state.B;
-    const items = planItems(lvl);
-    planA.append(h('p', { class: 'hint' }, 'Plan to ', h('b', null, lvl === 'woj' ? 'województwa' : 'powiaty'), ' oznaczone na mapie jako Działamy, Następny albo Testujemy. Status zmienisz w karcie regionu. Liczby na ' + B.year + ' r.'));
-    if (!items.length) {
+    const withCrews = crewItems().length > 0;
+    const items = withCrews ? [] : planItems(lvl);
+    if (withCrews) {
+      // scenariusz ekip zastępuje rachunek planu z oznaczeń
+      planA.append(h('div', { class: 'calib-out', style: 'margin-bottom:12px' }, 'Masz rozstawione ekipy, więc mapa i liczby na górze pokazują scenariusz ekip. Rachunek planu z oznaczeń (Działamy, Następny, Testujemy) wróci po wyczyszczeniu ekip.'));
+    } else {
+      planA.append(h('p', { class: 'hint' }, 'Plan to ', h('b', null, lvl === 'woj' ? 'województwa' : 'powiaty'), ' oznaczone na mapie jako Działamy, Następny albo Testujemy. Status zmienisz w karcie regionu. Liczby na ' + B.year + ' r.'));
+      if (lvl === 'pow' && items.length) planA.append(h('p', { class: 'hint' }, 'Przy powiatach liczymy popyt tylko z oznaczonych powiatów, a ekipa jeździ w promieniu ok. 100 km, więc ten rachunek zaniża plan. O liczbie ekip decyduj scenariuszem powyżej albo bazami w zakładce Bazy.'));
+    }
+    if (withCrews) {
+      // nic więcej: podsumowanie ekip jest w scenariuszu powyżej
+    } else if (!items.length) {
       planA.append(h('div', { class: 'calib-out', style: 'margin-bottom:12px' }, 'Na tym poziomie nie masz jeszcze regionów w planie. Kliknij region na mapie i oznacz go jako Działamy, Następny albo Testujemy.'));
     } else {
       const T = teamSummary(items);
@@ -1682,13 +1816,22 @@
   // ---------- KPI, formuła, przełączniki
   function renderBizKPIs(k) {
     const lvl = state.level, B = state.B;
-    let items = planItems(lvl), scope;
-    if (items.length) scope = 'Twój plan: ' + items.length + ' ' + plural(items.length, 'region', 'regiony', 'regionów');
-    else { items = polandItems(); scope = 'cała Polska'; }
+    const pd = B.perDay + ' ' + plural(B.perDay, 'czyszczeniu', 'czyszczeniach', 'czyszczeniach') + ' dziennie';
+    let items = crewItems(), techL;
+    if (items.length) {
+      const C = sumBiz(items.map((x) => [x.b, 1])), n = items.length;
+      const where = items.every((x) => x.lvl === 'woj') ? plural(n, 'województwie', 'województwach', 'województwach') : plural(n, 'regionie', 'regionach', 'regionach');
+      techL = 'techników przy ' + pd + ' w ' + n + ' ' + where + ' · ' + jobsTxt(C.jobs) + ' / mies., ' + fmtDec(C.market > 0 ? C.jobs / C.market * 100 : 0, 0) + '% realnego rynku tam (' + B.year + ' r.)';
+    } else if ((items = planItems(lvl)).length) {
+      techL = 'techników (' + fteTxt(sumBiz(items.map((x) => [x.b, 1])).tech) + ' przy ' + pd + ') · Twój plan: ' + items.length + ' ' + plural(items.length, 'region', 'regiony', 'regionów');
+    } else {
+      items = polandItems();
+      techL = 'techników (' + fteTxt(sumBiz(items.map((x) => [x.b, 1])).tech) + ' przy ' + pd + ') · cała Polska';
+    }
     const T = teamSummary(items);
     const tile = (icon, v, l, accent) => h('div', { class: 'kpi' + (accent ? ' kpi-accent' : '') }, h('div', null, h('div', { class: 'kpi-ico', icon }), h('div', { class: 'kpi-v' }, v)), h('div', { class: 'kpi-l' }, l));
     k.append(
-      tile('wrench', T.tp + ' ' + plural(T.tp, 'ekipa', 'ekipy', 'ekip'), 'techników (' + fteTxt(T.tech) + ' przy ' + B.perDay + ' ' + plural(B.perDay, 'czyszczeniu', 'czyszczeniach', 'czyszczeniach') + ' dziennie) · ' + scope),
+      tile('wrench', T.tp + ' ' + plural(T.tp, 'ekipa', 'ekipy', 'ekip'), techL),
       tile('headset', T.rp + ' ' + plural(T.rp, 'opiekun', 'opiekunów', 'opiekunów'), 'klienta do obsługi ' + fmtInt(T.leads) + ' ' + plural(T.leads, 'leada', 'leadów', 'leadów') + ' miesięcznie (' + fteTxt(T.reps) + ')'),
       tile('coins', fmtMoney(T.rev), 'przychodu netto miesięcznie z ' + jobsGen(T.jobs) + ' (' + B.year + ' r.)'),
       tile('target', fmtMoney(T.fullProfit), 'zysku firmy miesięcznie przy pełnych etatach · Twoja prowizja ' + fmtMoney(T.feeC), true)
@@ -1876,6 +2019,7 @@
       if (state.selected && state.selected.lvl !== state.level) state.selected = null;
       rankQuery = '';
       applyLevel();
+      if (state.mode === 'biz') renderKPIs();
       renderPanel();
       save();
     }));
